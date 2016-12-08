@@ -6,7 +6,7 @@ defmodule Dex.Service.Plugins.Mail do
   require Logger
   import Bamboo.Email
 
-  def send state = %{opts: opts} do do_send state, opts end
+  def send state = %{args: [], opts: opts} do do_send state, opts end
 
   defp do_send(state, opts) do
     case Enum.map(opts, &do_send &1) |> new_email |> deliver_now do

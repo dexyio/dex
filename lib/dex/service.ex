@@ -71,12 +71,11 @@ defmodule Dex.Service do
   @spec route(Proplist.t) :: response
   @spec route(%Request{}) :: response
 
-  @default_user "www"
+  @default_user "*"
   def route(req) when is_list(req) do struct(Request, req) |> route end
   def route req = %Request{id: nil} do route %{req | id: BIF.unique} end
   def route req = %Request{user: ""} do route %{req | user: @default_user} end
   def route req = %Request{user: user, app: app} do
-    IO.inspect user: user, app: app
     do_route {user, app}, req
   end
 

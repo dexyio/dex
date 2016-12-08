@@ -33,28 +33,47 @@ defmodule Dex.Service.User do
  
   @spec get(bitstring) :: {:ok, %__MODULE__{}} | {:error, :user_notfound}
 
-  def get(id) do
-    case KV.get(@bucket, id) do
+  def get user_id do
+    user_id = String.downcase user_id
+    case KV.get(@bucket, user_id) do
       {:error, _} -> {:error, :user_notfound}
       {:ok, user} -> {:ok, user}
     end
   end
 
+  def exist? user_id do
+    case get user_id do
+      {:ok, _} -> true
+      {:error, :user_notfound} -> false
+    end
+  end
+
   @spec new(bitstring, bitstring, bitstring) :: :ok | {:error, term}
 
-  def new(id, spw, email) do
+  def new user_id, secured_pw, email do
+    case exist? user_id do
+      true -> {:error, :user_already_exists}
+      false -> put user_id, secured_pw, email
+    end
+  end
+
+  @spec put(bitstring, bitstring, bitstring) :: :ok | {:error, term}
+
+  def put user_id, secured_pw, email do
+    user_id = String.downcase user_id
     user = %__MODULE__{
-      id: id,
-      __secret: secret(id, spw),
+      id: user_id,
+      __secret: secret(user_id, secured_pw),
       email: email,
       created: Timex.now |> Timex.format!("{RFC1123}"),  #"Tue, 08 Nov 2016 06:39:55 +0000"
       enabled: true
     }
-    KV.put(@bucket, id, user)
+    KV.put(@bucket, user_id, user)
   end
 
-  defp secret(id, spw) do
-    sha256(id <> ":" <> spw)
+  defp secret(user_id, secured_pw) do
+    String.downcase user_id
+    sha256 user_id <> ":" <> secured_pw
   end
 
 end

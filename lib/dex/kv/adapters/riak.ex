@@ -21,8 +21,8 @@ defmodule Dex.KV.Adapters.Riak do
     == YOU MUST APPLY CUSTOM EXTRACTORS FOR RIAK SEARCH ==
       
       $ riak attach
-        yz_extractor:register("YOUR_CONTENT_TYPE", YOUR_CUSTOM_EXTRACTOR).
-        yz_extractor:run(term_to_binary([]), YOUR_CUSTOM_EXTRACTOR).
+      > yz_extractor:register("YOUR_CONTENT_TYPE", YOUR_CUSTOM_EXTRACTOR).
+      > yz_extractor:run(term_to_binary([]), YOUR_CUSTOM_EXTRACTOR).
 
     """
   end

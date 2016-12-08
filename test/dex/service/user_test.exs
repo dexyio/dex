@@ -8,7 +8,8 @@ defmodule Dex.Service.UserTest do
   end
 
   test "new" do
-    assert :ok == User.new "foo", "foo@mail.com", "foo"
+    assert :ok == User.put "foo", "foo", "foo@mail.domain"
+    assert {:error, :user_already_exists} == User.new "foo", "foo", "foo@mail.domain"
     {:ok, user} = User.get "foo"
     assert user.id == "foo"
   end

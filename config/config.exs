@@ -87,20 +87,24 @@ config :dex, Dex.KV.Adapters.Riak,
     }
   ]
 
-config :dex, Dex.Service.Seater,
-  total_seats: 1000
+config :dex, Dex.Service.Seater, [
+  total_seats: 1000,
+]
 
-config :dex, Dex.Service.Plugins,
+config :dex, Dex.Service.Plugins, [
   core:   Dex.Service.Plugins.Core,
+  user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
   json:   Dex.Service.Plugins.JSON,
   auth:   Dex.Service.Plugins.Auth,
-  mail:   Dex.Service.Plugins.Mail
+  mail:   Dex.Service.Plugins.Mail,
+]
 
-config :dex, Dex.Service.Plugins.Mail,
+config :dex, Dex.Service.Plugins.Mail, [
   adapter: Bamboo.MailgunAdapter,
   api_key: "your-api-key",
-  domain: "your-domain"
+  domain: "your-domain",
+]
 
 # pooler
 config :pooler, :pools, [

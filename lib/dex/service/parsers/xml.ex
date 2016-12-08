@@ -879,20 +879,42 @@ defmodule Dex.Service.Parsers.XML do
     end
   end
 
-  defp write_fn state do
-    defstr = state.annots["private"] && "defp" || "def"
-    fun = state.opts["_id"] |> fun_no(state)
+  defp access_from_annots annots do
+    with \
+      nil <- annots["public"] && :public,
+      nil <- annots["private"] && :private,
+      do: :protected
+  end
+
+  defp set_function_access state, fun_name, access do
+    fun_name = String.downcase (fun_name || "")
+    case state.app.funs[fun_name] do
+      nil -> state
+      fun_obj ->
+        fun_obj = %{fun_obj| access: access}
+        new_funs = Map.put(state.app.funs, fun_name, fun_obj)
+        %{state | app: %{state.app | funs: new_funs}}
+    end
+  end
+
+  defp write_fn state = %{annots: annots} do
+    access = access_from_annots annots
+    defstr = access == :private && "defp" || "def"
+    fun_name = state.opts["_id"] 
+    fun_no = fun_no(fun_name, state)
     params = (state.opts["_params"] || "") |> String.replace(",", "")
     opts = state.opts |> Enum.map(fn {k, v} ->
       ~s/{"#{k}", #{v |> transform_maps |> inspect_val(state)}}/
     end) |> Enum.join(",") |> wrap_args
     codes = """
-    \n#{space 2}#{defstr} _F#{fun} s do  # id: #{state.opts["_id"]}
+    \n#{space 2}#{defstr} _F#{fun_no} s do  # id: #{state.opts["_id"]}
     #{space 4}data = s
     #{space 4}|> set_args(~w/#{params}/)
     #{space 4}|> set_opts(#{opts})
     """
-    %{state | full_codes: state.full_codes <> codes}
+    state
+      |> set_function_access(fun_name, access)
+      |> Map.put(:full_codes, state.full_codes <> codes)
   end
 
   defp write_do state do

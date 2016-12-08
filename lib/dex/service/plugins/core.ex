@@ -439,9 +439,9 @@ defmodule Dex.Service.Plugins.Core do
   defp do_assert [{k, v} | rest], dex do
     case Dex.val dex, k do
       ^v -> do_assert rest, dex
-      val when v == true -> val && do_assert(rest, dex) || {k, val}
-      val when v == false -> !val && do_assert(rest, dex) || {k, val}
-      val -> {k, val}
+      val when v == true -> val && do_assert(rest, dex) || {v, val}
+      val when v == false -> !val && do_assert(rest, dex) || {v, val}
+      val -> {v, val}
     end
   end
 

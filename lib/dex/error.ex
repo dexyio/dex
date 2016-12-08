@@ -44,6 +44,7 @@ defmodule Dex.Error do
   deferror ServiceTimeout
   deferror SyntaxError
 
+  deferror UserAlreadyExists
   deferror UserNotFound
   deferror Unauthorized
 
