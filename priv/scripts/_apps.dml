@@ -1,0 +1,27 @@
+@dexyml
+@title App Management
+
+<fn get='app_id'>
+  | app.get app_id
+  | if "ok" do: | set data.script | stop 
+  | unless "ok" do: | set {code: 404, body: data}
+</fn>
+
+<fn put='app_id'>
+  | app.put app_id, req.body
+  | unless "ok" do: | set {code: 400, body: data}
+</fn>
+
+<fn post='app_id'>
+  | app.post app_id, req.body
+  | unless "ok" do: | set {code: 409, body: data} | stop 
+  | set {code: 201}
+</fn>
+
+<fn delete='name'>
+  | app.delete name
+  | unless "ok" do: | set {code: 400, body: data}
+</fn>
+
+| set "function not found!"
+

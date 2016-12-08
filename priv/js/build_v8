@@ -1,0 +1,4 @@
+#!/bin/sh
+
+browserify -r underscore -r numeral -r jStat -r moment -r mathjs | uglifyjs > v8bundle_common.js 
+#browserify -r convnetjs -r synaptic -r node-mind -r brain.js | uglifyjs > v8bundle_ml.js 

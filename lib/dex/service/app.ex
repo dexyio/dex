@@ -1,0 +1,302 @@
+defmodule Dex.Service.App do
+
+  use Dex.Common
+  require Dex.KV, as: KV
+  alias Dex.Service.Parsers.XML
+  import Logger
+
+  defmodule Fun do
+    defstruct no: 0,
+              access: :protected,
+              args: [],
+              opts: %{},
+              annots: %{}
+    
+    @type default :: any
+    @type t :: %__MODULE__{
+      access: :public | :protected | :private,
+      args: [bitstring],
+      opts: %{bitstring => default},
+      annots: %{bitstring => any}
+    }
+  end
+
+  defstruct id: nil,
+            rev: 0,
+            owner: nil,
+            title: nil,
+            hash: nil,
+            script: nil,
+            parsed: nil,
+            tags: [],
+            vars: nil,
+            funs: %{},
+            uses: nil,
+            created: 0,
+            export: false,
+            enabled: true
+
+  @type fun_name:: bitstring
+  @type ref :: function
+  @type funs :: %{fun_name => %Fun{}}
+
+  @type t :: %__MODULE__{
+    id: bitstring,
+    owner: bitstring,
+    title: bitstring,
+    hash: bitstring,
+    rev: pos_integer,
+    script: bitstring,
+    parsed: bitstring,
+    vars: map,
+    funs: funs,
+    uses: map,
+    tags: list,
+    created: pos_integer,
+    export: boolean,
+    enabled: boolean
+  }
+
+  @user_id "*"
+  @path "priv/scripts/"
+  @apps [
+    "_apps",
+    "_test"
+  ]
+
+  @bucket :erlang.term_to_binary(__MODULE__)
+
+  def parse! user_id, str do
+    case String.split(str, ~r/\n|$/u, parts: 2) do
+      [compiler, script] ->
+        compiler
+          |> String.trim
+          |> do_parse({user_id, script})
+      _ ->
+        XML.parse! user_id, "<data/>"
+    end
+  end
+
+  defp do_parse head = "<data" <> _, {user_id, rest} do
+    XML.parse! user_id, head <> "\n" <> rest
+  end
+
+  defp do_parse "@dexyml" <> _, {user_id, script} do
+    script = """
+    <data>
+      #{script}
+    </data>
+    """
+    XML.parse! user_id, script
+  end
+
+  defp do_parse "@html" <> _, {user_id, script} do
+    {annots, script} = annotations script
+    script = """
+    <data>
+      #{annots} @cdata <fn:_html_ html=''> #{script}
+      </fn:_html_>
+      | map header: {content-type: "text/html;charset=utf8"}
+            body: html()
+    </data>
+    """
+    XML.parse! user_id, script
+  end
+
+  defp do_parse "@text" <> _, {user_id, script} do
+    {annots, script} = annotations script
+    script = """
+    <data>
+      #{annots} @cdata <do:_text_> #{script}
+      </do:_text_>
+    </data>
+    """
+    XML.parse! user_id, script
+  end
+
+  defp do_parse "@javascript" <> _, {user_id, script} do
+    {annots, script} = annotations script
+    script = """
+    <data>
+      #{annots} @lang javascript <do:_js_> #{script}
+      </do:_js_>
+    </data>
+    """
+    XML.parse! user_id, script
+  end
+
+  defp do_parse "@coffeescript" <> _, {user_id, script} do
+    {annots, script} = annotations script
+    script = """
+    <data>
+      #{annots} @lang coffeescript <do:_js_> #{script}
+      </do:_js_>
+    </data>
+    """
+    XML.parse! user_id, script
+  end
+
+  defp do_parse(script = <<first::8, _::bits>>, {user_id, _}) \
+  when first in [?@, ?|] do
+    do_parse "@dexyml", {user_id, script}
+  end
+
+  defp do_parse script, {user_id, _} do
+    do_parse "@text", {user_id, script}
+  end
+
+  defp annotations script do
+    regex = ~r/\s*@\w+[\s\S]*?\n *(?=<!?\w)/u
+    case Regex.run regex, script do
+      nil -> {"", script}
+      [captured] ->
+        replaced = String.replace(script, regex, "")
+        {captured, replaced}
+    end
+  end
+
+  @spec compile!(%Dex.Service.App{}, bitstring) :: {atom, binary}
+
+  def compile! app = %Dex.Service.App{}, module_name do
+    codes = "defmodule #{module_name} " <> app.parsed
+    #IO.puts codes
+    try do
+      [{mod, bin}] = Elixir.Code.compile_string codes
+      {mod, bin}
+    rescue ex ->
+      #IO.inspect ex
+      handle_exception ex, codes
+    catch :throw, {err, state} ->
+      raise Error.CompileError, reason: err, state: state
+    end
+  end
+
+  defp handle_exception ex = %SyntaxError{}, codes do
+    line_no = get_codeline(codes, ex.line + 1) |> get_lineno
+    raise Error.SyntaxError, reason: replace_errmsg(ex.description, line_no)
+  end
+
+  defp handle_exception ex = %CompileError{}, _codes do
+    raise Error.CompileError, reason: ex.description
+  end
+
+  defp handle_exception ex, _codes do
+    reraise ex, System.stacktrace
+  end
+
+  defp replace_errmsg "unexpected token: \"]\". " <> str, line_no do
+    str |> replace_lineno(line_no)
+  end
+
+  defp replace_errmsg str, line_no do
+    case Regex.run ~r/(?<=unexpected token: ")[^"]+/u, str do
+      nil -> default_errmsg :syntax, line_no
+      [token] -> "unexpected token: #{token}, line: #{line_no}"
+    end
+  end
+
+  defp default_errmsg :syntax, line_no do
+    "syntax error at line " <> to_string(line_no)
+  end
+
+  defp replace_lineno str, line_no do
+    String.replace str, ~r/line [0-9]+/, "line " <> to_string(line_no)
+  end
+
+  defp get_codeline codes, line do
+    BIF.lines(codes, limit: line)
+      |> Enum.reverse
+      |> Enum.drop_while(fn x ->
+        regex = ~r/(line: |do!\(s, |defp _L|def _F|defp _F)[0-9]+/
+        not Regex.match?(regex , x)
+      end)
+      |> List.first
+  end
+
+  defp get_lineno line do
+    regex = ~r/(?<=line: |do!\(s, |defp _L|def _F|defp _F)[0-9]+/
+    case Regex.run regex, line do
+      nil -> 0
+      [no] -> String.to_integer(no)
+    end
+  end
+
+  def ensure do
+    for app <- @apps do
+      case new(@user_id, app, script app) do
+        {:error, :app_already_exists} -> :ok
+        :ok -> :ok
+      end
+      debug "#{__MODULE__} ensure -> #{app}, ok."
+    end
+  end
+
+  def apps, do: @apps
+
+  def update app_id do
+    :ok = put(@user_id, app_id, String.strip(script app_id))
+    debug "#{__MODULE__} update -> #{app_id}, ok."
+  end
+
+  def update_all do
+    Enum.each @apps, &(update &1)
+  end
+
+  def script app_id do
+    file = @path <> app_id <> ".dml"
+    File.read! file
+  end
+
+  def get user_id, app_id do
+    key = key(user_id, app_id)
+    case KV.get(@bucket, key) do
+      {:ok, app} -> {:ok, app}
+      {:error, :notfound} -> {:error, :app_notfound}
+      error -> error
+    end
+  end
+
+  defp key _user_id, "_" <> app_id do
+    app_id = app_id |> String.trim_leading("_")
+    key @user_id, app_id
+  end
+
+  defp key user_id, app_id do
+    user_id <> "/" <> (app_id || "")
+  end
+
+  def exist?(user_id, app_id) do
+    get(user_id, app_id) != {:error, :app_notfound}
+  end
+
+  def new(user_id, app_id, body) do
+    if exist?(user_id, app_id) do
+      {:error, :app_already_exists}
+    else
+      put user_id, app_id, body
+    end
+  end
+
+  def put(user_id, app_id, body) do
+    app = parse! user_id, body
+    app = %{app | id: app_id}
+    KV.put @bucket, key(user_id, app_id), app
+  end
+
+  def del(user_id, app_id) do
+    key = key user_id, app_id
+    KV.del @bucket, key
+  end
+
+  def check!([{current, children} | tail], rest, state) do
+    {mod, fun, _, args} = current
+    state = %{state | children: children, tail: tail}
+    :ok = apply(mod, fun, [{:check!, args}])
+    {_args, state} = apply(mod, fun, [{:prepare!, args, state}])
+    check!(state.children, state.tail ++ rest, state)
+  end
+
+  def check!([], [], state), do: {:ok, state}
+  def check!([], [hd | tl], state), do: check!([hd], tl, state)
+
+end
