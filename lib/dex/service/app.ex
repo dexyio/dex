@@ -84,7 +84,7 @@ defmodule Dex.Service.App do
   defp do_parse "@dexyml" <> _, {user_id, script} do
     script = """
     <data>
-      #{script}
+    #{script}
     </data>
     """
     XML.parse! user_id, script
@@ -94,10 +94,10 @@ defmodule Dex.Service.App do
     {annots, script} = annotations script
     script = """
     <data>
-      #{annots} @cdata <fn:_html_ html=''> #{script}
-      </fn:_html_>
-      | map header: {content-type: "text/html;charset=utf8"}
-            body: html()
+    #{annots} @cdata <fn:_html_ html=''> #{script}
+    </fn:_html_>
+    | map header: {content-type: "text/html;charset=utf8"}
+          body: html()
     </data>
     """
     XML.parse! user_id, script
@@ -107,8 +107,8 @@ defmodule Dex.Service.App do
     {annots, script} = annotations script
     script = """
     <data>
-      #{annots} @cdata <do:_text_> #{script}
-      </do:_text_>
+    #{annots} @cdata <do:_text_> #{script}
+    </do:_text_>
     </data>
     """
     XML.parse! user_id, script
@@ -118,8 +118,8 @@ defmodule Dex.Service.App do
     {annots, script} = annotations script
     script = """
     <data>
-      #{annots} @lang javascript <do:_js_> #{script}
-      </do:_js_>
+    #{annots} @lang javascript <do:_js_> #{script}
+    </do:_js_>
     </data>
     """
     XML.parse! user_id, script
@@ -129,8 +129,8 @@ defmodule Dex.Service.App do
     {annots, script} = annotations script
     script = """
     <data>
-      #{annots} @lang coffeescript <do:_js_> #{script}
-      </do:_js_>
+    #{annots} @lang coffeescript <do:_js_> #{script}
+    </do:_js_>
     </data>
     """
     XML.parse! user_id, script
