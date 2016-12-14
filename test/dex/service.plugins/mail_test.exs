@@ -15,7 +15,7 @@ defmodule Dex.Service.Plugins.MailTest do
     :ok
   end
 
-  defp test_mail do
+  def test_mail do
     new_email \
       to: "winfavor@gmail.com",
       from: "noreply@dexy.io",
@@ -29,7 +29,7 @@ defmodule Dex.Service.Plugins.MailTest do
       """
   end
 
-  defp send_mail do
+  def send_mail do
     opts = %{
       "to" => "winfavor@gmail.com",
       "from" => "noreply@dexy.io",

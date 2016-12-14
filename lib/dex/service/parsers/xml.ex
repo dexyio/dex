@@ -177,7 +177,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp do_fix_line_syntax {line, no}, :fix_array_bracket do
     if Regex.match? ~r/^ *\| +\w+/u, line do
-      {replace_array_bracket(line), no}
+      {Mappy.transform(line), no}
     else
       {line, no}
     end
@@ -475,7 +475,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp sax_event_handler {:characters, chars}, state do
-    (chars |> to_string |> BIF.trim)
+    (chars |> to_string |> Lib.trim)
       |> case do
         str = "@" <> _ -> translate_annot state, str
         str -> put_in(state.cdata, str) |> translate_cdata
@@ -673,15 +673,9 @@ defmodule Dex.Service.Parsers.XML do
 
   defp transform_sharp_brackets str, state do
     Regex.replace ~r/#\{([\s\S]+?)\}/u, str, fn _match, f1 ->
-      f1 = replace_array_bracket(f1) |> replace_vars |> extract_funs(state) 
+      f1 = Mappy.transform(f1) |> replace_vars |> extract_funs(state) 
       "\#{#{f1}}"
     end
-  end
-
-  defp replace_array_bracket str do
-     Regex.replace ~r/(?<=\w|\])\[(.*?)\]/u, str, fn(_, f1) ->
-       f1 |> Dex.Map.transform_bracket
-     end
   end
 
   defp replace_map str do
@@ -794,7 +788,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp check_javascript! state do
-    lines = state.cdata |> BIF.lines 
+    lines = state.cdata |> Lib.lines 
     script = case List.last lines do
       "" -> "return null"
       last -> 
@@ -803,7 +797,7 @@ defmodule Dex.Service.Parsers.XML do
           nil -> raise Error.SyntaxError,
             reason: "missed 'return' in Javascript", state: state
           [spaces] ->
-            Enum.into(lines, "", & BIF.ltrim(&1, spaces) <> "\n")
+            Enum.into(lines, "", & Lib.ltrim(&1, spaces) <> "\n")
         end
     end
     %{state | cdata: script}
@@ -952,8 +946,8 @@ defmodule Dex.Service.Parsers.XML do
       Dex.JS.call(js, "CoffeeScript.compile", [state.cdata])
       |> case do
         {:ok, script} -> script
-          |> BIF.ltrim("(function() {\n")
-          |> BIF.rtrim("}).call(this);\n")
+          |> Lib.ltrim("(function() {\n")
+          |> Lib.rtrim("}).call(this);\n")
         {:error, reason} -> 
           raise Error.CompileError, reason: inspect(reason), state: state
       end

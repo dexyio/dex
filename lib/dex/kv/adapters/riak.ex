@@ -198,7 +198,7 @@ defmodule Dex.KV.Adapters.Riak do
 
   def put(bucket, key, val, opts) do
     type = opts[:content_type] || @default_content_type
-    new_object(bucket, key, BIF.to_binary(val), type)
+    new_object(bucket, key, Lib.to_binary(val), type)
     |> put_object
   end
 
@@ -242,7 +242,7 @@ defmodule Dex.KV.Adapters.Riak do
 
   defp value(object) do
     case :riakc_obj.get_value(object) do
-      bin when is_binary(bin) -> BIF.binary_to_term(bin)
+      bin when is_binary(bin) -> Lib.binary_to_term(bin)
       error -> error
     end
   end

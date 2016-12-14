@@ -24,7 +24,7 @@ defmodule Dex.Service.Plugins.JSON do
   defp do_encode_opts({"strip", val}, data) when is_map(data) do
     cnt = case val do
       "" -> 1
-      n -> Dex.BIF.to_number n, 1
+      n -> Lib.to_number n, 1
     end
     Enum.reduce(1..cnt, data, fn
       (_, acc) when is_map(acc) ->

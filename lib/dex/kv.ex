@@ -21,7 +21,7 @@ defmodule Dex.KV do
   defdelegate del(bucket, key), to: @adapter
 
   def unique_key do
-    BIF.now(:usecs) |> to_string
+    Lib.now(:usecs) |> to_string
   end
 
 end

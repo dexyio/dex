@@ -59,7 +59,7 @@ defmodule Dex.Service do
   end
 
   def start_worker user, req = %Request{id: nil} do
-    start_worker user, %{req | id: BIF.unique}
+    start_worker user, %{req | id: Lib.unique}
   end
 
   def start_worker user = %User{}, req = %Request{id: rid} do
@@ -73,14 +73,14 @@ defmodule Dex.Service do
 
   @default_user "*"
   def route(req) when is_list(req) do struct(Request, req) |> route end
-  def route req = %Request{id: nil} do route %{req | id: BIF.unique} end
+  def route req = %Request{id: nil} do route %{req | id: Lib.unique} end
   def route req = %Request{user: ""} do route %{req | user: @default_user} end
   def route req = %Request{user: user, app: app} do
     do_route {user, app}, req
   end
 
   def ping do
-    do_route {nil, BIF.now :usecs}, :ping
+    do_route {nil, Lib.now :usecs}, :ping
   end
 
   def do_route path = {_bucket, _key}, req, nodes \\ 1 do

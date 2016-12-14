@@ -75,7 +75,7 @@ defmodule Dex.Service.Plugins.Core do
   def to_binary state = %{args: []} do do_to_binary state, data! state end
   def to_binary state = %{args: [data]} do do_to_binary state, data end
 
-  defp do_to_binary(state, data) do {state, BIF.to_binary data} end
+  defp do_to_binary(state, data) do {state, Lib.to_binary data} end
 
   @spec to_term(state) :: {state, term}
 
@@ -83,7 +83,7 @@ defmodule Dex.Service.Plugins.Core do
   def to_term state = %{args: [data]} do do_to_term state, data end
 
   defp do_to_term(state, data) when is_binary(data) do
-    {state, BIF.binary_to_term data}
+    {state, Lib.binary_to_term data}
   end
 
   defp do_to_term(state, data) do {state, data} end
@@ -176,7 +176,7 @@ defmodule Dex.Service.Plugins.Core do
   def to_number state = %{args: [data]} do do_to_number state, data end
 
   defp do_to_number(state, data) when is_bitstring(data) do
-    {state, BIF.to_number data}
+    {state, Lib.to_number data}
   end
 
   @spec to_string(state) :: {state, bitstring}
@@ -394,7 +394,7 @@ defmodule Dex.Service.Plugins.Core do
   end
 
   defp do_at(state, val, idx) when is_number(idx) do
-    {state, BIF.at(val, idx)}
+    {state, Lib.at(val, idx)}
   end
 
   @spec set(state) :: state
@@ -459,7 +459,7 @@ defmodule Dex.Service.Plugins.Core do
     if conds == %{} do
       fn_.(state)
     else
-      case BIF.compare?(conds, state.dex) do
+      case compare?(conds, state.dex.map) do
         ^expected -> fn_.(state)
         _ -> cond_ %{state | args: rest}, expected
       end
@@ -602,14 +602,14 @@ defmodule Dex.Service.Plugins.Core do
     limit = opts["limit"]; trim = opts["trim"]
     opts = limit && is_number(limit) && [parts: limit] || []
     opts = trim || opts && [{:trim, true} | opts]
-    res = BIF.lines data, opts
+    res = Lib.lines data, opts
     {state, res}
   end
 
   @spec count(state) :: {state, number}
 
-  def count state = %{args: []} do {state, BIF.count data!(state)} end
-  def count state = %{args: [data]} do {state, BIF.count data} end
+  def count state = %{args: []} do {state, Lib.count data!(state)} end
+  def count state = %{args: [data]} do {state, Lib.count data} end
 
   @spec stop(state) :: Dex.Error.Stopped
 
@@ -658,7 +658,7 @@ defmodule Dex.Service.Plugins.Core do
   def length state = %{args: [data]} do do_length state, data end
 
   defp do_length state, data do
-    {state, BIF.length data}
+    {state, Lib.length data}
   end
 
   def is_true state = %{args: []} do do_is_true state, data! state end
@@ -713,17 +713,17 @@ defmodule Dex.Service.Plugins.Core do
     {state, String.trim_trailing data}
   end
   def upcase state do
-    res = BIF.upcase arg_data(state)
+    res = Lib.upcase arg_data(state)
     {state, res}
   end
 
   def downcase state do
-    res = BIF.downcase arg_data(state)
+    res = Lib.downcase arg_data(state)
     {state, res}
   end
 
   def bytes state do
-    res = BIF.bytes arg_data(state)
+    res = Lib.bytes arg_data(state)
     {state, res}
   end
 
@@ -732,22 +732,22 @@ defmodule Dex.Service.Plugins.Core do
   def slice state = %{args: args = [_, _, _]} do do_slice state, args end
 
   defp do_slice state, [range = _.._] do
-    res = BIF.slice data!(state), range
+    res = Lib.slice data!(state), range
     {state, res}
   end
 
   defp do_slice state, [data, range = _.._] do
-    res = BIF.slice data, range
+    res = Lib.slice data, range
     {state, res}
   end
 
   defp do_slice(state, [at, cnt]) when is_number(at) and is_number(cnt) do
-    res = BIF.slice data!(state), at, cnt
+    res = Lib.slice data!(state), at, cnt
     {state, res}
   end
 
   defp do_slice(state, [data, at, cnt]) when is_number(at) and is_number(cnt) do
-    res = BIF.slice data, at, cnt
+    res = Lib.slice data, at, cnt
     {state, res}
   end
 
@@ -761,7 +761,7 @@ defmodule Dex.Service.Plugins.Core do
   def reverse state = %{args: [data]} do do_reverse state, data end
 
   defp do_reverse(state, data) do
-    {state, BIF.reverse data}
+    {state, Lib.reverse data}
   end
 
   def take state = %{args: []} do do_take state, data!(state), 1 end
@@ -769,12 +769,45 @@ defmodule Dex.Service.Plugins.Core do
   def take state = %{args: [data, cnt]} do do_take state, data, cnt end
 
   defp do_take(state, data, cnt) when is_number(cnt) do
-    {state, BIF.take(data, cnt)}
+    {state, Lib.take(data, cnt)}
   end
 
-  def chiwoo state = %{args: [a]}do
-    {state, a+1}
+
+  @spec compare?(map, map) :: boolean
+
+  def compare?(conds, map) when is_map(conds) do
+    do_compare? Map.to_list(conds), map 
+  end 
+
+  defp do_compare? [], _map do true end 
+
+  defp do_compare? [{"_" <> _, _v} | rest], map do
+    do_compare? rest, map 
+  end 
+
+  defp do_compare? [{"true", v} | rest], map do
+    v && do_compare?(rest, map) || false
+  end 
+
+  defp do_compare? [{"false", v} | rest], map do
+    !v && do_compare?(rest, map) || false
+  end 
+
+  defp do_compare? [{k, v} | rest], map do
+    case Mappy.get map, k do
+      ^v -> do_compare? rest, map 
+      val when v == true -> val && do_compare?(rest, map) || false
+      val when v == false -> !val && do_compare?(rest, map) || false
+      val -> Regex.regex?(v) && regex_match?(v, val) && do_compare?(rest, map)
+             || false
+    end
   end
+
+  defp regex_match?(regex, str) when is_bitstring(str) do
+    Regex.match? regex, str
+  end   
+
+  defp regex_match?(_, _) do false end
 
 end
 

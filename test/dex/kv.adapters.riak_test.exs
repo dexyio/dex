@@ -52,8 +52,8 @@ defmodule Dex.KV.Adapters.RiakTest do
     %DataPut{
       bucket: bucket,
       data: val,
-      datetime: BIF.datetime_now |> BIF.datetime_format!("isoz"),
-      created: BIF.now(:usecs)
+      datetime: Lib.datetime_now |> Lib.datetime_format!("isoz"),
+      created: Lib.now(:usecs)
     }
     |> Map.from_struct
     |> Map.to_list

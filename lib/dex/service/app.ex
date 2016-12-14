@@ -204,7 +204,7 @@ defmodule Dex.Service.App do
   end
 
   defp get_codeline codes, line do
-    BIF.lines(codes, limit: line)
+    Lib.lines(codes, limit: line)
       |> Enum.reverse
       |> Enum.drop_while(fn x ->
         regex = ~r/(line: |do!\(s, |defp _L|def _F|defp _F)[0-9]+/

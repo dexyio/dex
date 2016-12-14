@@ -1,6 +1,7 @@
 defmodule Dex do
 
   use Application
+  use DexyLib
   use Dex.Sup
   require Dex.JS
 
@@ -55,7 +56,7 @@ defmodule Dex do
 
   def new do
     %Dex{
-      map: Map.new,
+      map: Mappy.new,
       js: nil
     }
   end
@@ -63,12 +64,12 @@ defmodule Dex do
   def set(dex, key, val) do
     put_in(
       dex.map,
-      Dex.Map.set(dex.map, key, val)
+      Mappy.set(dex.map, key, val)
     )
   end
 
   def val(dex, key, default \\ nil) do
-    case Dex.Map.val(dex.map, key) do
+    case Mappy.get(dex.map, key) do
       :error -> default
       val -> val
     end
@@ -77,7 +78,7 @@ defmodule Dex do
   def merge(dex, map) do
     put_in(
       dex.map,
-      Dex.Map.merge(dex.map, map)
+      Mappy.merge(dex.map, map)
     )
   end
 
@@ -86,26 +87,15 @@ defmodule Dex do
   end
 
   def count(dex, key) do
-    Dex.Map.count(dex.map, key)
+    Mappy.count(dex.map, key)
   end
 
   def keys(dex) do
-    Dex.Map.keys(dex.map)
+    Mappy.keys(dex.map)
   end
 
   def keys(dex, key) do
-    Dex.Map.keys(dex.map, key)
-  end
-
-  def exist?(dex, key) do
-    Dex.Map.exist?(dex.map, key)
-  end
-
-  def unset(dex, key) do
-    put_in(
-      dex.map,
-      Dex.Map.unset(dex.map, key)
-    )
+    Mappy.keys(dex.map, key)
   end
 
 end

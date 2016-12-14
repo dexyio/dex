@@ -8,7 +8,7 @@ defmodule Dex.Service.Vnode do
 
   @behaviour :riak_core_vnode
 
-  defmacro bucket, do: __MODULE__ |> BIF.to_binary
+  defmacro bucket, do: __MODULE__ |> DexyLib.to_binary
 
   # Callbacks
 
@@ -87,7 +87,7 @@ defmodule Dex.Service.Vnode do
 
   # Private functions
   defp store_bot partition, user_name do
-    key = {:partition, partition} |> BIF.to_binary
+    key = {:partition, partition} |> DexyLib.to_binary
     Dex.KV.put bucket, key, user_name
   end
 

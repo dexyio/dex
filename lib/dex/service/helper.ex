@@ -87,7 +87,7 @@ defmodule Dex.Service.Helper do
   defmacro val! "nil", _     do nil end
 
   defmacro val! str, state do
-    inspected = Dex.Map.parse_var! str
+    inspected = Mappy.parse_var! str
     quote do: Dex.val(unquote(state).dex, unquote(inspected), nil)
   end
 

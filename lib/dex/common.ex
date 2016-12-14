@@ -5,8 +5,9 @@ defmodule Dex.Common do
   defmacro __using__(_opts) do
     quote do
       use Dex.Error
+      use DexyLib
+      alias DexyLib, as: Lib
       require Dex.Service.Code, as: Code
-      require Dex.BIF, as: BIF
       import unquote(__MODULE__)
       
       def conf(mod \\ __MODULE__) do
