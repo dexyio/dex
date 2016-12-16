@@ -15,9 +15,9 @@ defmodule Dex.Service.Helper do
       |> do!(fun_ref) 
   end
 
-  defp do! state, {user_id, app_id, fun} do
+  def do! state, {user_id, app_id, fun} do
     with \
-      app_id = state.app.uses[app_id] || app_id,
+      app_id = (app = state.app.uses[app_id]) && app.id || app_id,
       {:ok, {app, module}} <- Seater.take_app(user_id, app_id),
       %App.Fun{no: no} = (app.funs[fun] 
         || raise Error.FunctionNotFound, state: %{state | fun: fun})
@@ -25,11 +25,12 @@ defmodule Dex.Service.Helper do
       |> do_do!(fn s_ -> apply(module, no_to_fn(no), [s_]) |> result end)
     else
       {:error, reason} ->
+        IO.inspect reason: reason
         raise Error.FunctionCallError, reason: reason, state: state
     end
   end
 
-  defp do!(state, fn_) when is_function(fn_) do
+  def do!(state, fn_) when is_function(fn_) do
     state
       |> do_do!(fn s_ -> fn_.(s_) |> result end)
   end
@@ -202,10 +203,6 @@ defmodule Dex.Service.Helper do
 
   def data! %{dex: dex} do
     Dex.val dex, "data"
-  end
-
-  def arg1_of args do
-    Enum.at (args || []), 0
   end
 
   def arg_data state = %{args: []} do data! state end

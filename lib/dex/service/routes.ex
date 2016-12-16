@@ -48,19 +48,17 @@ defmodule Dex.Service.Routes do
     end
   end
 
-  def route! str, state do
+  defp route! str, state do
     try do
       case String.split str, ".", parts: 2 do
         [fun] -> do_route! fun
-        [mod, fun] -> do_route! mod, fun
+        [app, fun] -> do_route! app, fun
       end
     catch
       {:notfound, str} ->
         raise Error.FunctionNotFound, state: %{state | fun: str}
     end
   end
-
-  @spec do_route!(bitstring) :: bitstring
 
   defp do_route! "nil"           do "&Core.nil_/1" end
   defp do_route! "true"          do "&Core.true_/1" end
@@ -73,12 +71,9 @@ defmodule Dex.Service.Routes do
   defp do_route! "is_integer"    do "&Core.is_integer_/1" end
   defp do_route! "is_float"      do "&Core.is_float_/1" end
   defp do_route! "is_boolean"    do "&Core.is_boolean_/1" end
-  defp do_route! "is_string"     do "&Core.is_string_/1" end
   defp do_route! "is_list"       do "&Core.is_list_/1" end
   defp do_route! "is_map"        do "&Core.is_map_/1" end
   defp do_route! "is_tuple"      do "&Core.is_tuple_/1" end
-  defp do_route! "is_range"      do "&Core.is_range_/1" end
-  defp do_route! "is_regex"      do "&Core.is_regex_/1" end
   defp do_route! "div"           do "&Core.div_/1" end
   defp do_route! "rem"           do "&Core.rem_/1" end
   defp do_route! "abs"           do "&Core.abs_/1" end
@@ -86,12 +81,10 @@ defmodule Dex.Service.Routes do
   defp do_route! "trunc"         do "&Core.trunc_/1" end
   defp do_route!(fun)            do do_route! "core", fun end
 
-  @spec do_route!(bitstring, bitstring) :: bitstring  
-
-  defp do_route!(mod, fun) do
+  defp do_route!(app, fun) do
     try do
-      mod = String.to_existing_atom mod
-      (mod = conf(Dex.Service.Plugins)[mod]) |> Elixir.Code.ensure_loaded 
+      app = String.to_existing_atom app
+      (mod = conf(Dex.Service.Plugins)[app]) |> Elixir.Code.ensure_loaded 
       fun = String.to_existing_atom(fun)
       (function_exported? mod, fun, 1) |> case do 
         true -> "&#{short_mod mod}.#{fun}/1"

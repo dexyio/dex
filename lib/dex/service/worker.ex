@@ -46,6 +46,7 @@ defmodule Dex.Service.Worker do
   end
 
   def handle_cast({:play, user, req}, state) do
+    req = %{req | fun: String.downcase req.fun}
     do_play %{state | user: user, req: req}
     {:stop, :normal, state}
   end
@@ -55,7 +56,6 @@ defmodule Dex.Service.Worker do
   defp do_play state do
     try do
       state
-      #|> check_user!
         |> check_app!
         |> set_vars
         |> play!
@@ -94,15 +94,20 @@ defmodule Dex.Service.Worker do
     end
   end
  
-  defp check_auth! state = %State{app: app} do
-    app.export && state || auth_basic! state
+  defp check_auth! state = %State{req: req, app: app} do
+    case app.funs[req.fun] do
+      nil -> state
+      %{access: :public} -> state
+      %{access: :protected} -> auth_basic! state
+      _private -> raise Error.FunctionNotFound, state: %{state | fun: req.fun}
+    end
   end
   
   defp set_vars state = %State{req: req} do
     dex = state.dex
       |> Dex.set("req.peer", req.peer)
       |> Dex.set("req.app", req.app)
-      |> Dex.set("req.fun", req.fun |> String.downcase)
+      |> Dex.set("req.fun", req.fun)
       |> Dex.set("req.args", req.args)
       |> Dex.set("req.opts", req.opts)
       |> Dex.set("req.header", req.header)
@@ -112,10 +117,8 @@ defmodule Dex.Service.Worker do
   end
 
   defp play! state = %State{req: req, app: app, mod: mod} do
-    fun = req.fun |> String.downcase |> real_fun(app)
-      || real_fun("error", app)
-      || raise Error.FunctionNotFound,
-               code: 404, state: %{state | fun: req.fun}
+    fun = req.fun |> real_fun(app)
+      || real_fun(App.default_fun, app)
     apply(mod, fun, [state])
   end
 

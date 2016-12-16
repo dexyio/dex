@@ -190,68 +190,101 @@ defmodule Dex.Service.Plugins.Core do
 
   @spec is_nil_(state) :: {state, boolean}
 
-  def is_nil_ state do
-    {state, is_nil arg_data(state)}
+  def is_nil_ state = %{args: []} do do_is_nil_ state, data! state end
+  def is_nil_ state = %{args: [data]} do do_is_nil_ state, data end
+
+  defp do_is_nil_(state, data) do
+    {state, is_nil data}
   end
 
   @spec is_boolean_(state) :: {state, boolean}
 
-  def is_boolean_ state do
-    {state, is_boolean arg_data(state)}
+  def is_boolean_ state = %{args: []} do do_is_boolean_ state, data! state end
+  def is_boolean_ state = %{args: [data]} do do_is_boolean_ state, data end
+
+  defp do_is_boolean_ state, data do
+    {state, is_boolean data}
   end
 
   @spec is_number_(state) :: {state, boolean}
 
-  def is_number_ state do
-    {state, is_number arg_data(state)}
+  def is_number_ state = %{args: []} do do_is_number_ state, data! state end
+  def is_number_ state = %{args: [data]} do do_is_number_ state, data end
+
+  defp do_is_number_ state, data do
+    {state, is_number data}
   end
 
   @spec is_integer_(state) :: {state, boolean}
 
-  def is_integer_ state do
-    {state, is_integer arg_data(state)}
+  def is_integer_ state = %{args: []} do do_is_integer_ state, data! state end
+  def is_integer_ state = %{args: [data]} do do_is_integer_ state, data end
+
+  defp do_is_integer_ state, data do
+    {state, is_integer data}
   end
 
   @spec is_float_(state) :: {state, boolean}
 
-  def is_float_ state do
-    {state, is_float arg_data(state)}
+  def is_float_ state = %{args: []} do do_is_float_ state, data! state end
+  def is_float_ state = %{args: [data]} do do_is_float_ state, data end
+
+  defp do_is_float_ state, data do
+    {state, is_float data}
   end
 
-  @spec is_string_(state) :: {state, boolean}
+  @spec is_string(state) :: {state, boolean}
 
-  def is_string_ state do
-    {state, is_bitstring arg_data(state)}
+  def is_string state = %{args: []} do do_is_string state, data! state end
+  def is_string state = %{args: [data]} do do_is_string state, data end
+
+  defp do_is_string state, data do
+    {state, is_bitstring data}
   end
 
   @spec is_tuple_(state) :: {state, boolean}
 
-  def is_tuple_ state do
-    {state, is_tuple arg_data(state)}
+  def is_tuple_ state = %{args: []} do do_is_tuple_ state, data! state end
+  def is_tuple_ state = %{args: [data]} do do_is_tuple_ state, data end
+
+  defp do_is_tuple_ state, data do
+    {state, is_tuple data}
   end
 
   @spec is_list_(state) :: {state, boolean}
 
-  def is_list_ state do
-    {state, is_list arg_data(state)}
+  def is_list_ state = %{args: []} do do_is_list_ state, data! state end
+  def is_list_ state = %{args: [data]} do do_is_list_ state, data end
+
+  defp do_is_list_ state, data do
+    {state, is_list data}
   end
 
   @spec is_map_(state) :: {state, boolean}
 
-  def is_map_ state do
-    {state, is_map arg_data(state)}
+  def is_map_ state = %{args: []} do do_is_map_ state, data! state end
+  def is_map_ state = %{args: [data]} do do_is_map_ state, data end
+
+  defp do_is_map_ state, data do
+    {state, is_map data}
   end
 
-  @spec is_range_(state) :: {state, boolean}
+  @spec is_range(state) :: {state, boolean}
 
-  def is_range_ state do
-    {state, Range.range? arg_data(state)}
+  def is_range state = %{args: []} do do_is_range state, data! state end
+  def is_range state = %{args: [data]} do do_is_range state, data end
+
+  defp do_is_range state, data do
+    {state, Range.range? data}
   end
 
-  @spec is_regex_(state) :: {state, boolean}
+  @spec is_regex(state) :: {state, boolean}
 
-  def is_regex_ state do
-    {state, Regex.regex? arg_data(state)}
+  def is_regex state = %{args: []} do do_is_regex state, data! state end
+  def is_regex state = %{args: [data]} do do_is_regex state, data end
+
+  defp do_is_regex state, data do
+    {state, Regex.regex? data}
   end
 
   @spec join(state) :: {state, term}
@@ -617,41 +650,50 @@ defmodule Dex.Service.Plugins.Core do
     raise Error.Stopped, state: state
   end
 
-  def use state = %{opts: opts} do
-    data = arg_data(state) |> String.trim_leading
-    do_use state, data, opts["as"]
-  end
+  def use state = %{args: [], opts: opts} do do_use state, data!(state), opts end
+  def use state = %{args: [data], opts: opts} do do_use state, data, opts end
 
-  defp do_use state, _, nil do
+  defp do_use state, _data, %{"as" => nil} do
     raise Error.AppAliasOmitted, state: state
   end
 
-  defp do_use state = %{req: req}, script, as do
-    app = App.parse! req.user, script
-    app_id = req.app <> ":" <> as
-    uses = (app.uses || %{}) |> Map.put(as, app_id)
-    app = %{app | owner: req.user, id: app_id, uses: uses}
-    state = %{state | app: app}
-    case Seater.alloc_app app do
-      {:ok, _module} -> {state, "ok"}
+  defp do_use(state = %{req: _req}, _path = "github://" <> _, %{"as" => as}) \
+  when is_bitstring(as) do
+    state
+  end
+
+  defp do_use(state = %{req: _req}, _path = "http" <> _, %{"as" => as}) \
+  when is_bitstring(as) do
+    state
+  end
+
+  defp do_use(state = %{req: req}, data, %{"as" => as}) \
+  when is_bitstring(data) and is_bitstring(as) do
+    new_app = App.parse! req.user, (Lib.ltrim data)
+    new_app = %{new_app | id: req.app <> ":" <> as}
+    case Seater.alloc_app new_app do
+      {:ok, _module} ->
+        uses = (state.app.uses || %{}) |> Map.put(as, new_app)
+        state = %{state | app: %{state.app | uses: uses}}
+        {state, "ok"}
       {:error, reason} -> raise Error.AppAllocationFailed,
         reason: reason, state: state
     end
   end
 
-  def apply state = %{opts: opts} do
-    appfun = arg_data(state) |> String.split(".", parts: 2)
+  def apply state = %{args: [], opts: opts} do do_apply state, data!(state), opts end
+  def apply state = %{args: [data], opts: opts} do do_apply state, data, opts end
+
+  defp do_apply(state = %{req: req}, data, opts) when is_bitstring(data) do
+    {app, fun} = data |> String.split(".", parts: 2)
       |> case do
-        [app] -> {app, "get"}
+        [app] -> {app, App.default_fun}
         [app, fun] -> {app, fun}
       end
     apply_args = opts["args"] || []
     apply_opts = opts["opts"] || %{}
-    do_apply state, appfun, apply_args, apply_opts
-  end
-
-  defp do_apply state, {app, fun}, args, opts do
-    do! state, state.line, "", {state.req.user, app, fun}, args, opts
+    %{state | line: state.line, args: apply_args, opts: apply_opts}
+      |> do!({req.user, app, fun})
   end
 
   def length state = %{args: []} do do_length state, data! state end
@@ -712,19 +754,26 @@ defmodule Dex.Service.Plugins.Core do
   defp do_rtrim(state, data) when is_bitstring(data) do
     {state, String.trim_trailing data}
   end
-  def upcase state do
-    res = Lib.upcase arg_data(state)
-    {state, res}
+
+  def upcase state = %{args: []} do do_upcase state, data! state end
+  def upcase state = %{args: [data]} do do_upcase state, data end
+
+  defp do_upcase(state, data) when is_bitstring(data) do
+    {state, Lib.upcase data}
   end
 
-  def downcase state do
-    res = Lib.downcase arg_data(state)
-    {state, res}
+  def downcase state = %{args: []} do do_downcase state, data! state end
+  def downcase state = %{args: [data]} do do_downcase state, data end
+
+  defp do_downcase(state, data) when is_bitstring(data) do
+    {state, Lib.downcase data}
   end
 
-  def bytes state do
-    res = Lib.bytes arg_data(state)
-    {state, res}
+  def bytes state = %{args: []} do do_bytes state, data! state end
+  def bytes state = %{args: [data]} do do_bytes state, data end
+  
+  def do_bytes(state, data) when is_bitstring(data) do
+    {state, Lib.bytes data}
   end
 
   def slice state = %{args: args = [_]} do do_slice state, args end

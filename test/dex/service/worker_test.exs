@@ -35,7 +35,7 @@ defmodule Dex.Service.WorkerTest do
   end
 
   test "app1 - error when invalid call" do
-    assert {:error, %{args: [], code: 404, error: "FunctionNotFound", fun: "invalid", line: 0, message: nil, opts: %{}}} == call "app1", "invalid" 
+    assert {:ok, "invalid function"} == call "app1", "invalid" 
   end
 
   test "putting the app2" do
@@ -62,7 +62,7 @@ defmodule Dex.Service.WorkerTest do
   end
 
   test "app2 - invalid calling app1" do
-    assert {:error, %{args: [], code: 404, error: "FunctionNotFound", fun: "invalid", line: 0, message: nil, opts: %{}}} == call "app2", "invalid" 
+    assert {:ok, "invalid function"} == call "app2", "invalid" 
   end
 
   test "pipeline 'use'" do

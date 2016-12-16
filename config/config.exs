@@ -98,6 +98,7 @@ config :dex, Dex.Service.Plugins, [
   json:   Dex.Service.Plugins.JSON,
   auth:   Dex.Service.Plugins.Auth,
   mail:   Dex.Service.Plugins.Mail,
+  crypto: DexyPluginCrypto,
 ]
 
 config :dex, Dex.Service.Plugins.Mail, [

@@ -48,7 +48,7 @@ defmodule Dex.Service.Parsers.XML do
   @type whitespace :: bitstring
   @type annotations :: map
 
-  @global_annots ~w(id title export tags use disabled appdoc set)
+  @global_annots ~w(id title export tags use disable appdoc set)
   @block_annots ~w(public private lang doc noparse cdata)
 
   @spec parse!(bitstring, bitstring) :: %Dex.Service.App{}
@@ -342,7 +342,7 @@ defmodule Dex.Service.Parsers.XML do
         no = no + 1
         {{id |> String.downcase, %App.Fun{no: no}}, no}
       end) |> elem(0)
-      |> Enum.into(%{"get" => %App.Fun{no: 0, access: :public}})
+      |> Enum.into(%{App.default_fun => %App.Fun{no: 0, access: :public}})
     funs = Map.merge(state.app.funs, funs)
     put_in state.app.funs, funs
   end
@@ -371,7 +371,7 @@ defmodule Dex.Service.Parsers.XML do
     do_set_appenv rest, state
   end
 
-  defp do_set_appenv [%{name: "disabled"} | rest], state do
+  defp do_set_appenv [%{name: "disable"} | rest], state do
     state = put_in state.app.enabled, false
     do_set_appenv rest, state
   end

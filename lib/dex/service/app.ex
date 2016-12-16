@@ -37,6 +37,7 @@ defmodule Dex.Service.App do
             enabled: true
 
   @type fun_name:: bitstring
+  @type app_alias :: bitstring
   @type ref :: function
   @type funs :: %{fun_name => %Fun{}}
 
@@ -48,16 +49,17 @@ defmodule Dex.Service.App do
     rev: pos_integer,
     script: bitstring,
     parsed: bitstring,
-    vars: map,
-    funs: funs,
-    uses: map,
-    tags: list,
+    vars: %{bitstring => any()},
+    funs: %{fun_name => %Fun{}},
+    uses: %{app_alias => %__MODULE__{}},
+    tags: list(bitstring),
     created: pos_integer,
     export: boolean,
     enabled: boolean
   }
 
-  @user_id "*"
+  @default_userid "*"
+  @default_fun "default"
   @path "priv/scripts/"
   @apps [
     "_apps",
@@ -76,6 +78,10 @@ defmodule Dex.Service.App do
         XML.parse! user_id, "<data/>"
     end
   end
+
+  @spec default_fun() :: bitstring
+
+  def default_fun, do: @default_fun
 
   defp do_parse head = "<data" <> _, {user_id, rest} do
     XML.parse! user_id, head <> "\n" <> rest
@@ -223,7 +229,7 @@ defmodule Dex.Service.App do
 
   def ensure do
     for app <- @apps do
-      case new(@user_id, app, script app) do
+      case new(@default_userid, app, script app) do
         {:error, :app_already_exists} -> :ok
         :ok -> :ok
       end
@@ -234,7 +240,7 @@ defmodule Dex.Service.App do
   def apps, do: @apps
 
   def update app_id do
-    :ok = put(@user_id, app_id, String.strip(script app_id))
+    :ok = put(@default_userid, app_id, String.strip(script app_id))
     debug "#{__MODULE__} update -> #{app_id}, ok."
   end
 
@@ -258,7 +264,7 @@ defmodule Dex.Service.App do
 
   defp key _user_id, "_" <> app_id do
     app_id = app_id |> String.trim_leading("_")
-    key @user_id, app_id
+    key @default_userid, app_id
   end
 
   defp key user_id, app_id do
