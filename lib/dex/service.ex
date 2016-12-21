@@ -5,6 +5,7 @@ defmodule Dex.Service do
   alias Dex.Service.User
   alias Dex.Service.App
   alias Dex.Service.Worker
+  alias DexyLib.Mappy
 
   defmodule State do
     defmodule Trace do

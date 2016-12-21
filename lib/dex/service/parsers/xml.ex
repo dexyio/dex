@@ -2,6 +2,7 @@ defmodule Dex.Service.Parsers.XML do
  
   use Dex.Common
   use Dex.Service
+  alias DexyLib.Mappy
   alias Dex.Service.App
   alias Dex.Service.Routes
 

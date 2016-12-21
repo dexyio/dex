@@ -1,6 +1,7 @@
 defmodule Dex.Service.Test do
   
   use Dex.Common
+  alias DexyLib.Mappy
   alias Dex.Service.App
 
   defmacro __using__(_) do

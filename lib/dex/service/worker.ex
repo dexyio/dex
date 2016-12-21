@@ -3,6 +3,7 @@ defmodule Dex.Service.Worker do
   use GenServer
   use Dex.Common
   use Dex.Service.Helper
+  alias DexyLib.Mappy
   alias Dex.Service.User
   alias Dex.Service.App
   alias Dex.Service.Request
@@ -65,7 +66,7 @@ defmodule Dex.Service.Worker do
         reply! ex.state
       ex ->
         #IO.inspect ex
-        IO.inspect System.stacktrace
+        #IO.inspect System.stacktrace
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{

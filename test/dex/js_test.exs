@@ -1,7 +1,7 @@
 defmodule Dex.JSTest do
 
   use ExUnit.Case
-  use Dex.JS
+  alias Dex.JS
 
   test "eval!" do
     js = JS.take_handle

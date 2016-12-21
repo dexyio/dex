@@ -1,6 +1,7 @@
 defmodule Dex.Test do
   
   use Dex.Common
+  alias DexyLib.Mappy
   alias Dex.Service.App
 
   defmodule Helper do

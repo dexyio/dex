@@ -1,6 +1,7 @@
 defmodule Dex.Service.Helper do
 
   use Dex.Common
+  alias DexyLib.Mappy
   alias DexyLib.JSON
   alias Dex.Service.Seater
   alias Dex.Service.App

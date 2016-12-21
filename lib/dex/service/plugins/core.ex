@@ -2,6 +2,7 @@ defmodule Dex.Service.Plugins.Core do
 
   use Dex.Common
   use Dex.Service.Helper
+  alias DexyLib.Mappy
   alias Dex.Service.Seater
   alias Dex.Service.App
 

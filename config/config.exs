@@ -95,9 +95,9 @@ config :dex, Dex.Service.Plugins, [
   core:   Dex.Service.Plugins.Core,
   user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
-  json:   Dex.Service.Plugins.JSON,
   auth:   Dex.Service.Plugins.Auth,
   mail:   Dex.Service.Plugins.Mail,
+  json:   DexyPluginJson,
   crypto: DexyPluginCrypto,
 ]
 

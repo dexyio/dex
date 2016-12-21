@@ -7,17 +7,20 @@ defmodule Dex.JS do
   @type error :: {:error, reason}
   @type reason :: term
 
+  defmodule Adapter do
+    alias Dex.JS
+    @callback start_link(Keyword.t) :: {:ok, pid} | JS.error
+    @callback eval(pid, bitstring, pos_integer) :: {:ok, term} | JS.error
+    @callback call(pid, fun, list, pos_integer) :: {:ok, term} | JS.error
+    @callback take_handle() :: {:ok, pid} | JS.error
+    @callback return_handle(pid) :: term
+  end
+
   defdelegate start_link(args \\ []), to: @adapter
   defdelegate eval(handle, script, timeout \\ 5000), to: @adapter
   defdelegate call(handle, fun, args, timeout \\ 5000), to: @adapter
   defdelegate take_handle(), to: @adapter
   defdelegate return_handle(handle), to: @adapter
-
-  defmacro __using__(opts) do
-    quote do
-      alias unquote(__MODULE__), unquote(opts)
-    end
-  end # defmacro
 
   @spec eval!(handle, bitstring) :: term | error
 
