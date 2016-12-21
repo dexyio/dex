@@ -70,11 +70,4 @@ defmodule DexTest do
     """ |> assert_raise!(Dex.Error.SyntaxError)
   end
 
-  test "plugin crypto" do
-    ~S"""
-    @dexyml
-    | crypto.ping
-    """ |> assert!("pong")
-  end
-
 end

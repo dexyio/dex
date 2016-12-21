@@ -2,8 +2,9 @@ defmodule Dex.KV.Adapters.Riak do
 
   use Timex
   use Dex.Common
+  alias DexyLib.JSON
 
-  @behaviour Dex.KV
+  @behaviour Dex.KV.Adapter
   @default_content_type "application/x-erlang-binary"
 
   def start_link(host \\ '127.0.0.1', port \\ 8087) do
@@ -76,7 +77,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def create_bucket_type(type, props) do
-    json = Dex.JSON.encode! %{
+    json = JSON.encode! %{
       props: props |> Enum.into(%{})
     }
     (cmd = "riak-admin bucket-type create #{type} '#{json}'"
@@ -86,7 +87,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def update_bucket_type(type, props) do
-    json = Dex.JSON.encode! %{props: props |> Enum.into(%{})}
+    json = JSON.encode! %{props: props |> Enum.into(%{})}
     (cmd = "riak-admin bucket-type update #{type} '#{json}'"
       |> String.to_char_list)
       |> os_cmd

@@ -74,8 +74,8 @@ defmodule Dex.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:dexy_lib, "~> 0.1.1"},
-      {:dexy_plugin_crypto, github: "dexyio/dexy_plugin_crypto"},
+      {:dexy_lib, github: "dexyio/dexy_lib"},
+      #{:dexy_plugin_crypto, github: "dexyio/dexy_plugin_crypto"},
 
       {:con_cache, "~> 0.11.1"},
       {:ex_doc, "~> 0.14", only: :dev},

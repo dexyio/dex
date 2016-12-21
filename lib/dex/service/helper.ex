@@ -1,6 +1,7 @@
 defmodule Dex.Service.Helper do
 
   use Dex.Common
+  alias DexyLib.JSON
   alias Dex.Service.Seater
   alias Dex.Service.App
 
@@ -89,7 +90,7 @@ defmodule Dex.Service.Helper do
 
   defmacro val! str, state do
     inspected = Mappy.parse_var! str
-    quote do: Dex.val(unquote(state).dex, unquote(inspected), nil)
+    quote do: Mappy.val(unquote(state).mappy, unquote(inspected), nil)
   end
 
   _ = ~S"""
@@ -128,7 +129,7 @@ defmodule Dex.Service.Helper do
 
   defp handle_exception ex = %Protocol.UndefinedError{}, state do
     IO.inspect ex
-    js_ex = Dex.JSON.decode!(ex.value)
+    js_ex = JSON.decode!(ex.value)
     state = %{state | line: state.line + js_ex["lineno"] + 1}
     reraise Error.JavascriptError,
       [reason: js_ex["error"], state: state], System.stacktrace
@@ -138,25 +139,25 @@ defmodule Dex.Service.Helper do
     reraise ex, System.stacktrace
   end
 
-  def set_args state = %{dex: dex, args: args}, params do
+  def set_args state = %{mappy: map, args: args}, params do
     p_args = Enum.zip(params, args) |> Enum.into(%{})
-    dex = Dex.merge(dex, p_args)
-    %{state | dex: dex}
+    map = Mappy.merge(map, p_args)
+    %{state | mappy: map}
   end
 
-  def set_opts state = %{dex: dex, opts: nil}, kv_list do
-    dex = Enum.reduce kv_list, dex, fn {k, defv}, acc ->
-      Dex.set(acc, k, defv)
+  def set_opts state = %{mappy: map, opts: nil}, kv_list do
+    map = Enum.reduce kv_list, map, fn {k, defv}, acc ->
+      Mappy.set(acc, k, defv)
     end
-    %{state | dex: dex}
+    %{state | mappy: map}
   end
 
-  def set_opts state = %{dex: dex, opts: opts}, kv_list do
-    dex = Enum.reduce kv_list, dex, fn {k, defv}, acc ->
+  def set_opts state = %{mappy: map, opts: opts}, kv_list do
+    map = Enum.reduce kv_list, map, fn {k, defv}, acc ->
       v = Map.get(opts, k, defv)
-      Dex.set(acc, k, v)
+      Mappy.set(acc, k, v)
     end
-    %{state | dex: dex}
+    %{state | mappy: map}
   end
 
   defp result {state, :null} do result {state, nil} end
@@ -169,7 +170,7 @@ defmodule Dex.Service.Helper do
 
   def run_javascript state, script, args do
     try do
-      script = "(#{script}).apply(null,#{Dex.JSON.encode! args});"
+      script = "(#{script}).apply(null,#{JSON.encode! args});"
       case Dex.JS.eval(state.js, script) do
         {:ok, res} -> {state, res}
         {:error, err} -> throw Enum.into(err, %{})
@@ -196,13 +197,13 @@ defmodule Dex.Service.Helper do
     end
   end
 
-  def set_data state = %{dex: dex}, val do
-    dex = Dex.set dex, "data", val
-    %{state | dex: dex}
+  def set_data state = %{mappy: map}, val do
+    map = Mappy.set map, "data", val
+    %{state | mappy: map}
   end
 
-  def data! %{dex: dex} do
-    Dex.val dex, "data"
+  def data! %{mappy: map} do
+    Mappy.val map, "data"
   end
 
   def arg_data state = %{args: []} do data! state end

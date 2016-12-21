@@ -69,7 +69,7 @@ defmodule Dex.Service.Test do
     state = mod._F0 %Dex.Service.State{
       req: @temp_req, user: @temp_user, app: app
     }
-    Dex.val(state.dex, "data")
+    Mappy.val(state.mappy, "data")
   end
 
   def do!(script) when is_list(script) do

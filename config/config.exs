@@ -107,6 +107,11 @@ config :dex, Dex.Service.Plugins.Mail, [
   domain: "your-domain",
 ]
 
+# dexy_lib
+config :dexy_lib, DexyLib.JSON, [
+  adapter: DexyLib.JSON.Adapters.Poison
+]
+
 # pooler
 config :pooler, :pools, [
   [

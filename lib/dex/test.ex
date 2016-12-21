@@ -91,7 +91,7 @@ defmodule Dex.Test do
       req: Helper.request, user: Helper.user, app: app, js: js
     }
     Dex.JS.return_handle js
-    Dex.val(state.dex, "data")
+    Mappy.val(state.mappy, "data")
   end
 
   def do!(script) when is_list(script) do

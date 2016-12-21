@@ -2,16 +2,17 @@ defmodule Dex.Service.Plugins.JSON do
 
   use Dex.Common
   use Dex.Service.Helper
+  alias DexyLib.JSON
 
   def encode state = %{opts: opts} do
     res = arg_data(state)
       |> encode_opts(Map.to_list opts)
-      |> Dex.JSON.encode!
+      |> JSON.encode!
     {state, res}
   end 
   
   def decode state do
-    res = Dex.JSON.decode! arg_data(state)
+    res = JSON.decode! arg_data(state)
     {state, res}
   end
 

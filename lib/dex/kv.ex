@@ -4,20 +4,20 @@ defmodule Dex.KV do
 
   @adapter Application.get_env(:dex, __MODULE__)[:adapter]
 
-  @type error :: {:error, reason}
-  @type reason :: term
+  defmodule Adapter do
+    @type error :: {:error, reason}
+    @type reason :: term
 
-  @callback start_link(list, pos_integer) :: {:ok, pid} | error
+    @callback start_link(list, pos_integer) :: {:ok, pid} | error
+    @callback put(binary, binary, binary, list(Keyword.t)) :: :ok | error
+    @callback get(binary, binary) :: {:ok, term} | error
+    @callback del(binary, binary) :: :ok | error
+  end
+
   defdelegate start_link, to: @adapter
   defdelegate start_link(host, port), to: @adapter
-
-  @callback put(binary, binary, binary, list(Keyword.t)) :: :ok | error
   defdelegate put(bucket, key, val, opts \\ []), to: @adapter
-
-  @callback get(binary, binary) :: {:ok, term} | error
   defdelegate get(bucket, key), to: @adapter
-
-  @callback del(binary, binary) :: :ok | error
   defdelegate del(bucket, key), to: @adapter
 
   def unique_key do

@@ -7,17 +7,17 @@ defmodule Dex.JS do
   @type error :: {:error, reason}
   @type reason :: term
 
-  defmacro __using__(opts) do
-    quote do
-      alias unquote(__MODULE__), unquote(opts)
-    end
-  end # defmacro
-
   defdelegate start_link(args \\ []), to: @adapter
   defdelegate eval(handle, script, timeout \\ 5000), to: @adapter
   defdelegate call(handle, fun, args, timeout \\ 5000), to: @adapter
   defdelegate take_handle(), to: @adapter
   defdelegate return_handle(handle), to: @adapter
+
+  defmacro __using__(opts) do
+    quote do
+      alias unquote(__MODULE__), unquote(opts)
+    end
+  end # defmacro
 
   @spec eval!(handle, bitstring) :: term | error
 
@@ -40,7 +40,7 @@ defmodule Dex.JS do
   @spec eval_script!(handle, bitstring, list) :: term | error
 
   def eval_script! handle, script, args \\ []  do
-    script = "(function() {#{script}}).apply(null, #{Dex.JSON.encode! args});"
+    script = "(function() {#{script}}).apply(null, #{DexyLib.JSON.encode! args});"
     eval! handle, script
   end
 

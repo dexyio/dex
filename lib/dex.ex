@@ -7,10 +7,6 @@ defmodule Dex do
 
   defstruct map: %{}, js: nil
 
-  @type t :: %__MODULE__{
-    map: map,
-  }
-
   defmacro __using__(_) do
     quote do
     end
@@ -52,50 +48,6 @@ defmodule Dex do
     ]
     opts = [strategy: :one_for_one, name: Dex.Supervisor]
     Elixir.Supervisor.start_link(children, opts)
-  end
-
-  def new do
-    %Dex{
-      map: Mappy.new,
-      js: nil
-    }
-  end
-
-  def set(dex, key, val) do
-    put_in(
-      dex.map,
-      Mappy.set(dex.map, key, val)
-    )
-  end
-
-  def val(dex, key, default \\ nil) do
-    case Mappy.get(dex.map, key) do
-      :error -> default
-      val -> val
-    end
-  end
-
-  def merge(dex, map) do
-    put_in(
-      dex.map,
-      Mappy.merge(dex.map, map)
-    )
-  end
-
-  def count(enum) do
-    Enum.count enum
-  end
-
-  def count(dex, key) do
-    Mappy.count(dex.map, key)
-  end
-
-  def keys(dex) do
-    Mappy.keys(dex.map)
-  end
-
-  def keys(dex, key) do
-    Mappy.keys(dex.map, key)
   end
 
 end

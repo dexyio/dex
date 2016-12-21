@@ -441,11 +441,11 @@ defmodule Dex.Service.Plugins.Core do
     do_set state, opts
   end
 
-  defp do_set state = %{dex: dex}, opts do
-    dex = Enum.reduce opts, dex, fn {k, v}, acc ->
-      Dex.set(acc, k, v)
+  defp do_set state = %{mappy: map}, opts do
+    map = Enum.reduce opts, map, fn {k, v}, acc ->
+      Mappy.set(acc, k, v)
     end
-    %{state | dex: dex}
+    %{state | mappy: map}
   end
 
   @spec val(state) :: {state, term}
@@ -460,20 +460,20 @@ defmodule Dex.Service.Plugins.Core do
     assert %{state | args: [], opts: Map.put(opts, "data", arg)}
   end
 
-  def assert state = %{dex: dex, args: [], opts: opts} do
-    case do_assert(opts |> Map.to_list, dex) do
+  def assert state = %{mappy: map, args: [], opts: opts} do
+    case do_assert(opts |> Map.to_list, map) do
       true -> state
       {k, v} -> raise Error.AssertionFailed, reason: [k, v], state: state
     end
   end
 
-  defp do_assert [], _dex do true end
+  defp do_assert [], _map do true end
 
-  defp do_assert [{k, v} | rest], dex do
-    case Dex.val dex, k do
-      ^v -> do_assert rest, dex
-      val when v == true -> val && do_assert(rest, dex) || {v, val}
-      val when v == false -> !val && do_assert(rest, dex) || {v, val}
+  defp do_assert [{k, v} | rest], map do
+    case Mappy.val map, k do
+      ^v -> do_assert rest, map
+      val when v == true -> val && do_assert(rest, map) || {v, val}
+      val when v == false -> !val && do_assert(rest, map) || {v, val}
       val -> {v, val}
     end
   end
@@ -492,7 +492,7 @@ defmodule Dex.Service.Plugins.Core do
     if conds == %{} do
       fn_.(state)
     else
-      case compare?(conds, state.dex.map) do
+      case compare?(conds, state.mappy) do
         ^expected -> fn_.(state)
         _ -> cond_ %{state | args: rest}, expected
       end
@@ -580,7 +580,7 @@ defmodule Dex.Service.Plugins.Core do
     {res, state2} =
       Enum.map_reduce data, state, fn x, s ->
         s = set_data(s, x) |> cond_(true)
-        {data!(s), %{state | dex: s.dex}}
+        {data!(s), %{state | mappy: s.mappy}}
       end
     {state2, res}
   end

@@ -22,7 +22,7 @@ defmodule Dex.Service.Worker do
 
   def new_state do
     %Dex.Service.State{
-      dex: Dex.new,
+      mappy: Mappy.new,
       js: Dex.JS.take_handle
     }
   end
@@ -64,12 +64,14 @@ defmodule Dex.Service.Worker do
       ex in Error.Stopped -> 
         reply! ex.state
       ex ->
-        #IO.inspect ex; IO.inspect System.stacktrace
-        state2 = (struct_to_map(ex)[:state] || state) |> struct_to_map
+        #IO.inspect ex
+        IO.inspect System.stacktrace
+        ex_map = struct_to_map(ex)
+        state2 = (ex_map[:state] || state) |> struct_to_map
         %{
-          error: ex.message, 
-          code: ex.code || Code.bad_request,
-          message: ex.reason, 
+          error: ex_map[:message] || inspect(ex.__struct__),
+          code: ex_map[:code] || Code.bad_request,
+          message: ex_map[:reason] || inspect(ex_map),
           line: state2[:line], 
           fun: state2[:fun],
           args: state2[:args],
@@ -104,16 +106,16 @@ defmodule Dex.Service.Worker do
   end
   
   defp set_vars state = %State{req: req} do
-    dex = state.dex
-      |> Dex.set("req.peer", req.peer)
-      |> Dex.set("req.app", req.app)
-      |> Dex.set("req.fun", req.fun)
-      |> Dex.set("req.args", req.args)
-      |> Dex.set("req.opts", req.opts)
-      |> Dex.set("req.header", req.header)
-      |> Dex.set("req.body", req.body)
-      |> Dex.merge(req.vars)
-    %{state | dex: dex, args: req.args, opts: req.opts}
+    map = state.mappy
+      |> Mappy.set("req.peer", req.peer)
+      |> Mappy.set("req.app", req.app)
+      |> Mappy.set("req.fun", req.fun)
+      |> Mappy.set("req.args", req.args)
+      |> Mappy.set("req.opts", req.opts)
+      |> Mappy.set("req.header", req.header)
+      |> Mappy.set("req.body", req.body)
+      |> Mappy.merge(req.vars)
+    %{state | mappy: map, args: req.args, opts: req.opts}
   end
 
   defp play! state = %State{req: req, app: app, mod: mod} do
@@ -129,8 +131,8 @@ defmodule Dex.Service.Worker do
     end
   end
 
-  defp reply! %{dex: dex, req: req} do
-    result_data = Dex.val(dex, "data")
+  defp reply! %{mappy: map, req: req} do
+    result_data = Mappy.val(map, "data")
     send req.callback, {req.id, {:ok, result_data}}
   end
 
