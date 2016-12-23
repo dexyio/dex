@@ -70,9 +70,9 @@ defmodule Dex.Service.Worker do
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{
-          error: ex_map[:message] || inspect(ex.__struct__),
+          error: ex_map[:message] || "RuntimeError",
           code: ex_map[:code] || Code.bad_request,
-          message: ex_map[:reason] || inspect(ex_map),
+          message: (if ex_map[:state], do: ex.reason, else: inspect ex),
           line: state2[:line], 
           fun: state2[:fun],
           args: state2[:args],

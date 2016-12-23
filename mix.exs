@@ -45,8 +45,8 @@ defmodule Dex.Mixfile do
       :erlang_v8, 
       :con_cache,
       :riak_core,
-      :bamboo,
       :httpoison,
+      :dexy_plugin_mail,
     ]
   end
 
@@ -76,6 +76,7 @@ defmodule Dex.Mixfile do
     [
       {:dexy_lib, github: "dexyio/dexy_lib"},
       {:dexy_plugin_json, github: "dexyio/dexy_plugin_json"},
+      {:dexy_plugin_mail, github: "dexyio/dexy_plugin_mail"},
 
       {:con_cache, "~> 0.11.1"},
       {:ex_doc, "~> 0.14", only: :dev},
@@ -90,7 +91,6 @@ defmodule Dex.Mixfile do
       {:socket, "~> 0.3"},
       {:timex, "~> 3.0"},
       {:httpoison, "~> 0.10.0"},
-      {:bamboo, "~> 0.7"},
 
       {:erlang_js, github: "basho/erlang_js", branch: "develop"},
       {:erlang_v8, github: "strange/erlang_v8", compile: "make"},

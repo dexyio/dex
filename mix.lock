@@ -13,6 +13,7 @@
   "dexy_lib": {:git, "https://github.com/dexyio/dexy_lib.git", "34b01fcc67639f92d7b75a1321ec2f1c8594f4da", []},
   "dexy_plugin_crypto": {:git, "https://github.com/dexyio/dexy_plugin_crypto.git", "119d2e2253792c30d1c69e8ab157b8f7a4a924ea", []},
   "dexy_plugin_json": {:git, "https://github.com/dexyio/dexy_plugin_json.git", "b6ee7b903faf200b4e057997b8756c881496fdb2", []},
+  "dexy_plugin_mail": {:git, "https://github.com/dexyio/dexy_plugin_mail.git", "42a9b67987c39727f6e4914b3955c5b4006fdcc5", []},
   "earmark": {:hex, :earmark, "1.0.3", "89bdbaf2aca8bbb5c97d8b3b55c5dd0cff517ecc78d417e87f1d0982e514557b", [:mix], []},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "eflame": {:git, "https://github.com/proger/eflame.git", "55f594153d03f41d8dbd6b6da7c784f93fa81345", []},

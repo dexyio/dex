@@ -91,28 +91,39 @@ config :dex, Dex.Service.Seater, [
   total_seats: 1000,
 ]
 
+# Warning:
+#   If the module name changes, the user code must be recompiled.
+#   Because the module is determined when user code is compiled.
+#   We are planning to automate this process.
 config :dex, Dex.Service.Plugins, [
   core:   Dex.Service.Plugins.Core,
   user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
-  auth:   Dex.Service.Plugins.Auth,
-  mail:   Dex.Service.Plugins.Mail,
   json:   DexyPluginJson,
+  mail:   DexyPluginMail,
   crypto: DexyPluginCrypto,
 ]
 
-config :dex, Dex.Service.Plugins.Mail, [
+# dexy_lib
+
+config :dexy_lib, DexyLib.JSON, [
+  adapter: DexyLib.JSON.Adapters.Poison
+]
+
+# dexy plugins
+
+config :dexy_plugin_mail, DexyPluginMail, [
+  adapter: DexyPluginMail.Adapters.Bamboo
+]
+
+config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo, [
   adapter: Bamboo.MailgunAdapter,
   api_key: "your-api-key",
   domain: "your-domain",
 ]
 
-# dexy_lib
-config :dexy_lib, DexyLib.JSON, [
-  adapter: DexyLib.JSON.Adapters.Poison
-]
-
 # pooler
+
 config :pooler, :pools, [
   [
     name: Dex.KV,

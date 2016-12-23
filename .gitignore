@@ -10,10 +10,10 @@ node_modules/
 log.*/
 data.*/
 *.ez
-*.swp
 *.log
 *.zip
 *.bak
+*.swp
 .secret.exs
 .DS_Store
 erl_crash.dump

@@ -90,7 +90,7 @@ defmodule Dex.Service.WorkerTest do
       </data>
     """ |> assert!("hello")
   end
-
+  
   defp call app, fun do
     user = Helper.user
     req = Helper.request_props app, fun
