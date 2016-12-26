@@ -114,7 +114,7 @@ defmodule Dex.Service.Helper do
       "do_" <> _ ->
         raise Error.InvalidArgument, state: state
       fun ->
-        if (String.starts_with? fun, state.fun),
+        if (String.ends_with? state.fun, fun),
           do: (raise Error.BadArity, state: state),
           else: (reraise ex, System.stacktrace)
     end

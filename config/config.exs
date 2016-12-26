@@ -1,29 +1,34 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-# This configuration is loaded before any dependency and is restricted
-# to this project. If another project depends on this project, this
-# file won't be loaded nor affect the parent project. For this reason,
-# if you want to provide default values for your application for third-
-# party users, it should be done in your mix.exs file.
-
-# Sample configuration:
 #
-#     config :logger, :console,
-#       level: :info,
-#       format: "$date $time [$level] $metadata$message\n",
-#       metadata: [:user_id]
-
-# It is also possible to import configuration files, relative to this
-# directory. For example, you can emulate configuration per environment
-# by uncommenting the line below and defining dev.exs, test.exs and such.
-# Configuration from the imported file will override the ones defined
-# here (which is why it is important to import them last).
+# Bucket indexes
 #
-#     import_config "#{Mix.env}.exs"
+g_CORE_BUCKET_IDX_START = 0
+g_CORE_BUCKET_IDX_END = 99
+
+g_PLUGIN_BUCKET_IDX_START = 100
+g_PLUGIN_BUCKET_IDX_END = 199
+
+g_CORE_BUCKET_IDX = [
+  :USER,
+  :APP,
+] |> Enum.with_index(g_CORE_BUCKET_IDX_START)
+
+g_PLUGIN_BUCKET_IDX = [
+  :KV,
+] |> Enum.with_index(g_PLUGIN_BUCKET_IDX_START)
 
 
+(g_CORE_BUCKET_IDX |> Enum.at(g_CORE_BUCKET_IDX_END)) && throw :core_buckets_exceeded
+(g_PLUGIN_BUCKET_IDX |> Enum.at(g_PLUGIN_BUCKET_IDX_END)) && throw :plugin_buckets_exceeded
+
+
+config :dex, Dex.Service.User,    bucket: <<g_CORE_BUCKET_IDX[:USER]>>
+config :dex, Dex.Service.App,     bucket: <<g_CORE_BUCKET_IDX[:APP]>> 
+
+#
+# Module Configuration
+#
 config :dex, Dex.Supervisor,
   children: [
     supervisor: :pooler_sup,
@@ -61,7 +66,7 @@ config :dex, Dex.Cache.Adapters.ConCache,
   default_opts: [
     ttl: :timer.seconds(10),
     ttl_check: :timer.seconds(1),
-    touch_on_read: true
+   touch_on_read: true
   ]
 
 config :dex, Dex.KV,
@@ -99,18 +104,23 @@ config :dex, Dex.Service.Plugins, [
   core:   Dex.Service.Plugins.Core,
   user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
+  kv:     DexyPluginKV,
   json:   DexyPluginJson,
   mail:   DexyPluginMail,
   crypto: DexyPluginCrypto,
 ]
 
-# dexy_lib
-
+#
+# Dexy Plugins
+#
 config :dexy_lib, DexyLib.JSON, [
   adapter: DexyLib.JSON.Adapters.Poison
 ]
 
-# dexy plugins
+config :dexy_plugin_kv, DexyPluginKV, [
+  bucket: <<g_PLUGIN_BUCKET_IDX[:KV]>>,
+  adapter: DexyPluginKV.Adapters.Riak
+]
 
 config :dexy_plugin_mail, DexyPluginMail, [
   adapter: DexyPluginMail.Adapters.Bamboo
@@ -122,8 +132,15 @@ config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo, [
   domain: "your-domain",
 ]
 
-# pooler
+#
+# Erlang/OTP SASL
+#
+config :sasl,
+  errlog_type: :error
 
+#
+# Pooler
+#
 config :pooler, :pools, [
   [
     name: Dex.KV,
@@ -131,22 +148,27 @@ config :pooler, :pools, [
     max_count: 100,
     init_count: 10,
     start_mfa: {Dex.KV, :start_link, []}
-  ],
-  [
+  ], [
     name: Dex.JS,
     group: :js,
     max_count: 100,
     init_count: 10,
     start_mfa: {Dex.JS, :start_link, []}
+  ], [
+    name: DexyPluginKV.Adapters.Riak,
+    group: :riak,
+    max_count: 100,
+    init_count: 10,
+    start_mfa: {DexyPluginKV.Adapters.Riak, :start_link, []}
   ]
 ]
 
 config :pooler, :backup, [
 ]
 
-config :sasl,
-  errlog_type: :error
-
+#
+# Riak Core
+#
 config :riak_core,
   web_port: 18098,
   handoff_port: 18099,
@@ -158,6 +180,9 @@ config :riak_core,
   sasl_log_dir: './log/sasl',
   schema_dirs: ['priv']
 
+#
+# Lager for logging
+#
 config :lager,
   error_logger_hwm: 5000
 

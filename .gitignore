@@ -16,4 +16,5 @@ data.*/
 *.swp
 .secret.exs
 .DS_Store
+mix.lock
 erl_crash.dump

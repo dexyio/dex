@@ -23,5 +23,5 @@
   | unless "ok" do: | set {code: 400, body: data}
 </fn>
 
-| set "function not found!"
+| map body: nil, code: 404
 

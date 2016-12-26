@@ -249,7 +249,7 @@ defmodule Dex.Service.App do
   end
 
   def script app_id do
-    file = @path <> app_id <> ".dml"
+    file = @path <> app_id <> ".dex"
     File.read! file
   end
 
@@ -291,7 +291,7 @@ defmodule Dex.Service.App do
 
   def del(user_id, app_id) do
     key = key user_id, app_id
-    KV.del @bucket, key
+    KV.delete @bucket, key
   end
 
   def check!([{current, children} | tail], rest, state) do

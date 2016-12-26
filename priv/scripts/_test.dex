@@ -3,7 +3,3 @@
 
 | use req.body as: "test"
 | apply "test.#{req.fun}" args: req.args, opts: req.opts
-
-<fn error=''>
-  | get
-</fn>

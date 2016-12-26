@@ -26,27 +26,26 @@ defmodule Dex.Mixfile do
   def application do
     [
       applications: applications(Mix.env),
-      included_applications: [
-        :pooler
-      ],
+      included_applications: [:pooler],
       mod: {Dex, []}
     ]
   end
   
   defp applications :prod do
     [
+      :dexy_lib,
+      :dexy_plugin_mail,
+
       :logger,
-      :timex,
       :gproc,
       :erlsom,
-      :poison,
-      :socket,
       :erlang_js,
       :erlang_v8, 
       :con_cache,
       :riak_core,
-      :httpoison,
-      :dexy_plugin_mail,
+
+      #:socket,
+      #:httpoison,
     ]
   end
 
@@ -75,6 +74,7 @@ defmodule Dex.Mixfile do
   defp deps do
     [
       {:dexy_lib, github: "dexyio/dexy_lib"},
+      {:dexy_plugin_kv, github: "dexyio/dexy_plugin_kv"},
       {:dexy_plugin_json, github: "dexyio/dexy_plugin_json"},
       {:dexy_plugin_mail, github: "dexyio/dexy_plugin_mail"},
 
@@ -83,21 +83,18 @@ defmodule Dex.Mixfile do
       {:exrm, "~> 1.0.0-rc7"},
       {:erlsom, "~> 1.2"},
       {:gproc, "~> 0.6.1"},
-      {:matrix, "~> 0.3.0"},
-      {:poison, "~> 3.0", override: true}, #{:jsone, "~> 1.2"}, 
       {:pooler, "~> 1.5"},
-      {:riakc, "~> 2.1"},
       {:riak_core, ">= 2.2.6", hex: :riak_core_ng},
-      {:socket, "~> 0.3"},
-      {:timex, "~> 3.0"},
-      {:httpoison, "~> 0.10.0"},
 
       {:erlang_js, github: "basho/erlang_js", branch: "develop"},
       {:erlang_v8, github: "strange/erlang_v8", compile: "make"},
       {:jsx, "~> 2.8", override: true},
+      {:riakc, "~> 2.4", override: true},
 
+      #{:socket, "~> 0.3"},
+      #{:httpoison, "~> 0.10.0"},
+      #{:matrix, "~> 0.3.0"},
       #{:jobs, github: "uwiger/jobs"},
-      #{:gproc, github: "uwiger/gproc"},
     ]
   end
 end
