@@ -179,7 +179,16 @@ defmodule Dex.Service.App do
 
   defp handle_exception ex = %SyntaxError{}, codes do
     line_no = get_codeline(codes, ex.line + 1) |> get_lineno
-    raise Error.SyntaxError, reason: replace_errmsg(ex.description, line_no)
+    raise Error.SyntaxError,
+      reason: replace_errmsg(ex.description, line_no),
+      state: %Dex.Service.State{line: line_no}
+  end
+
+  defp handle_exception ex = %TokenMissingError{}, codes do
+    line_no = get_codeline(codes, ex.line + 1) |> get_lineno
+    raise Error.SyntaxError,
+      reason: replace_errmsg(ex.description, line_no),
+      state: %Dex.Service.State{line: line_no}
   end
 
   defp handle_exception ex = %CompileError{}, _codes do
@@ -194,10 +203,14 @@ defmodule Dex.Service.App do
     str |> replace_lineno(line_no)
   end
 
+  defp replace_errmsg str = "missing terminator: " <> _, line_no do
+    str |> replace_lineno(line_no)
+  end
+
   defp replace_errmsg str, line_no do
     case Regex.run ~r/(?<=unexpected token: ")[^"]+/u, str do
       nil -> default_errmsg :syntax, line_no
-      [token] -> "unexpected token: #{token}, line: #{line_no}"
+      [token] -> "unexpected token #{token}"
     end
   end
 
