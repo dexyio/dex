@@ -1,7 +1,7 @@
 use Mix.Config
 
 #
-# Bucket indexes
+# Bucket Indexes
 #
 g_CORE_BUCKET_IDX_START = 0
 g_CORE_BUCKET_IDX_END = 99
@@ -19,12 +19,9 @@ g_PLUGIN_BUCKET_IDX = [
 ] |> Enum.with_index(g_PLUGIN_BUCKET_IDX_START)
 
 
-(g_CORE_BUCKET_IDX |> Enum.at(g_CORE_BUCKET_IDX_END)) && throw :core_buckets_exceeded
-(g_PLUGIN_BUCKET_IDX |> Enum.at(g_PLUGIN_BUCKET_IDX_END)) && throw :plugin_buckets_exceeded
+(g_CORE_BUCKET_IDX |> Enum.at(g_CORE_BUCKET_IDX_END+1)) && throw :core_buckets_exceeded
+(g_PLUGIN_BUCKET_IDX |> Enum.at(g_PLUGIN_BUCKET_IDX_END+1)) && throw :plugin_buckets_exceeded
 
-
-config :dex, Dex.Service.User,    bucket: <<g_CORE_BUCKET_IDX[:USER]>>
-config :dex, Dex.Service.App,     bucket: <<g_CORE_BUCKET_IDX[:APP]>> 
 
 #
 # Module Configuration
@@ -40,6 +37,12 @@ config :dex, Dex.Supervisor,
      _opts = [id: Vnode_master_worker]
     },
   ]
+
+config :dex, Dex.Service.User,
+  bucket: <<g_CORE_BUCKET_IDX[:USER]>>
+
+config :dex, Dex.Service.App,
+  bucket: <<g_CORE_BUCKET_IDX[:APP]>> 
 
 config :dex, Dex.JS, 
   adapter: Dex.JS.Adapters.ErlangJS,
@@ -92,45 +95,46 @@ config :dex, Dex.KV.Adapters.Riak,
     }
   ]
 
-config :dex, Dex.Service.Seater, [
-  total_seats: 1000,
-]
+config :dex, Dex.Service.Seater,
+  total_seats: 1000
 
 # Warning:
 #   If the module name changes, the user code must be recompiled.
 #   Because the module is determined when user code is compiled.
 #   We are planning to automate this process.
-config :dex, Dex.Service.Plugins, [
+config :dex, Dex.Service.Plugins,
   core:   Dex.Service.Plugins.Core,
   user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
   kv:     DexyPluginKV,
   json:   DexyPluginJson,
   mail:   DexyPluginMail,
-  crypto: DexyPluginCrypto,
-]
+  crypto: DexyPluginCrypto
+
+
+#
+# Dexy Core Library
+#
+config :dexy_lib, DexyLib.JSON,
+  adapter: DexyLib.JSON.Adapters.Poison
+
 
 #
 # Dexy Plugins
 #
-config :dexy_lib, DexyLib.JSON, [
-  adapter: DexyLib.JSON.Adapters.Poison
-]
+config :dexy_plugin_json, DexyPluginJson, []
 
-config :dexy_plugin_kv, DexyPluginKV, [
+config :dexy_plugin_kv, DexyPluginKV,
   bucket: <<g_PLUGIN_BUCKET_IDX[:KV]>>,
   adapter: DexyPluginKV.Adapters.Riak
-]
 
-config :dexy_plugin_mail, DexyPluginMail, [
+config :dexy_plugin_mail, DexyPluginMail,
   adapter: DexyPluginMail.Adapters.Bamboo
-]
 
-config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo, [
+config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo,
   adapter: Bamboo.MailgunAdapter,
   api_key: "your-api-key",
-  domain: "your-domain",
-]
+  domain: "your-domain"
 
 #
 # Erlang/OTP SASL
@@ -163,8 +167,7 @@ config :pooler, :pools, [
   ]
 ]
 
-config :pooler, :backup, [
-]
+config :pooler, :backup, []
 
 #
 # Riak Core

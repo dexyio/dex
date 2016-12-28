@@ -686,14 +686,16 @@ defmodule Dex.Service.Plugins.Core do
   def apply state = %{args: [data], opts: opts} do do_apply state, data, opts end
 
   defp do_apply(state = %{req: req}, data, opts) when is_bitstring(data) do
-    {app, fun} = data |> String.split(".", parts: 2)
-      |> case do
-        [app] -> {app, App.default_fun}
-        [app, fun] -> {app, fun}
-      end
     apply_args = opts["args"] || []
     apply_opts = opts["opts"] || %{}
-    %{state | line: state.line, args: apply_args, opts: apply_opts}
+    {app, fun} = data |> String.split(".", parts: 2)
+      |> case do
+        [fun] -> {state.app.id, fun}
+        ["_" <> _, _] -> raise Error.FunctionCallError,
+          reason: "You can't call common app functions", state: state
+        [app, fun] -> {app, fun}
+      end
+    %{state | args: apply_args, opts: apply_opts}
       |> do!({req.user, app, fun})
   end
 

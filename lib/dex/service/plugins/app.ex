@@ -48,7 +48,7 @@ defmodule Dex.Service.Plugins.App do
   end
  
   defp do_post state = %{user: user}, app_id, body do
-    res = case App.new user.id, app_id, body do
+    res = case App.create user.id, app_id, body do
       :ok -> "ok"
       {:error, reason} -> to_string reason
     end
@@ -64,7 +64,7 @@ defmodule Dex.Service.Plugins.App do
   end
 
   defp do_delete state = %{user: user}, app_id do
-    res = case App.del user.id, app_id do
+    res = case App.delete user.id, app_id do
       :ok -> "ok"
       {:error, reason} ->  to_string reason
     end

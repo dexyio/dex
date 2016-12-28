@@ -81,12 +81,18 @@ defmodule Dex.Service.WorkerTest do
         | apply "myapp.#{fun}" args: [1,2], opts: {c: 10}
       </data>
     """ |> assert!(13)
-
     ~S"""
       <data>
         | set "<data> \"hello\" </data>"
         | use as: "myapp"
-        | apply "myapp"
+        | apply "myapp.default"
+      </data>
+    """ |> assert!("hello")
+    ~S"""
+      <data>
+        | set "<data> \"hello\" </data>"
+        | use as: "myapp"
+        | apply "myapp.default"
       </data>
     """ |> assert!("hello")
   end

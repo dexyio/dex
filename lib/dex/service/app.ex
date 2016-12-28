@@ -229,7 +229,7 @@ defmodule Dex.Service.App do
 
   def ensure do
     for app <- @apps do
-      case new(@default_userid, app, script app) do
+      case create(@default_userid, app, script app) do
         {:error, :app_already_exists} -> :ok
         :ok -> :ok
       end
@@ -275,7 +275,7 @@ defmodule Dex.Service.App do
     get(user_id, app_id) != {:error, :app_notfound}
   end
 
-  def new(user_id, app_id, body) do
+  def create(user_id, app_id, body) do
     if exist?(user_id, app_id) do
       {:error, :app_already_exists}
     else
@@ -289,7 +289,7 @@ defmodule Dex.Service.App do
     KV.put @bucket, key(user_id, app_id), app
   end
 
-  def del(user_id, app_id) do
+  def delete(user_id, app_id) do
     key = key user_id, app_id
     KV.delete @bucket, key
   end
@@ -304,5 +304,12 @@ defmodule Dex.Service.App do
 
   def check!([], [], state), do: {:ok, state}
   def check!([], [hd | tl], state), do: check!([hd], tl, state)
+
+  def real_fun app = %__MODULE__{}, fun_name do
+    case app.funs[fun_name] do
+      %Fun{} = fun -> "_F#{fun.no}" |> String.to_existing_atom
+      nil -> nil
+    end
+  end
 
 end

@@ -120,16 +120,9 @@ defmodule Dex.Service.Worker do
   end
 
   defp play! state = %State{req: req, app: app, mod: mod} do
-    fun = req.fun |> real_fun(app)
-      || real_fun(App.default_fun, app)
+    fun = App.real_fun(app, req.fun) || App.real_fun(app, App.default_fun)
+      #|| raise Error.FunctionNotFound, state: %{state | fun: req.fun}
     apply(mod, fun, [state])
-  end
-
-  defp real_fun fun_name, app do
-    case app.funs[fun_name] do
-      %App.Fun{} = fun -> "_F#{fun.no}" |> String.to_existing_atom
-      nil -> nil
-    end
   end
 
   defp reply! %{mappy: map, req: req} do
