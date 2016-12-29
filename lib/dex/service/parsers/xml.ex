@@ -111,42 +111,51 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp fix_line_syntax state do
-    res = String.split(state.script, ~r/\r?\n/)
+    res = String.split(state.script, ~R/\r?\n/)
       |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
         {line2, no} = pass? && {line, no} || (
           {line, no}
             |> do_fix_line_syntax(:remove_line_comment)
             |> do_fix_line_syntax(:check_syntax)
+            |> do_fix_line_syntax(:fix_noset_value)
             |> do_fix_line_syntax(:fix_element_fn)
             |> do_fix_line_syntax(:fix_ifunless_opts)
             |> do_fix_line_syntax(:fix_do_opts)
             |> do_fix_line_syntax(:fix_question_mark)
             |> do_fix_line_syntax(:fix_array_bracket)
         )
-        pass? = pass? || Regex.match?(~r/<!\[CDATA\[/, line2)
-        pass? = pass? && not Regex.match?(~r/]]>/, line2)
+        pass? = pass? || Regex.match?(~R/<!\[CDATA\[/, line2)
+        pass? = pass? && not Regex.match?(~R/]]>/, line2)
         {script <> line2 <> "\n", no + 1, pass?}
       end) |> elem(0)
     %{state | script: res}
   end
 
   defp do_fix_line_syntax {line, no}, :remove_line_comment do
-    line2 = Regex.replace ~r/(\s+|^)\/\/.*/u, line, "\\1"
+    line2 = Regex.replace ~R/(\s+|^)\/\/.*/u, line, "\\1"
     {line2, no}
   end
 
   defp do_fix_line_syntax {line, no}, :check_syntax do
+    Regex.match?(~R/\s*\|[\w:\-\.]+($|\s+)/u, line) && raise Error.SyntaxError,
+      reason: line, state: %Dex.Service.State{line: no}
     {line, no} 
   end
 
+  defp do_fix_line_syntax {line, no}, :fix_noset_value do
+    line2 = ~R/(\s*\|\s+)([0-9]|[^\w\s])(.*?)(?=\s+\| +|\s*$)/u
+      |> Regex.replace(line, "\\1set \\2\\3")
+    {line2, no} 
+  end
+
   defp do_fix_line_syntax {line, no}, :fix_element_fn do
-    line2 = ~r/(<fn(?::\w+)?)\s+(\w+)\s*=\s*['"]([\s\S]*?)['"]/u
+    line2 = ~R/(<fn(?::\w+)?)\s+(\w+)\s*=\s*['"]([\s\S]*?)['"]/u
       |> Regex.replace(line, "\\1 _id='\\2' _params='\\3'")
     {line2, no} 
   end
 
   defp do_fix_line_syntax {line, no}, :fix_ifunless_opts do
-    line2 = ~r/(^|\s)(\| +[\w.-]+[^\|]*?)\s+(if|unless)( +[\w.-:]+)?:\s+(.+?)\s*(?=(\s\| +[\w.-]+.*)|$)\6*/u
+    line2 = ~R/(^|\s)(\| +[\w.-]+[^\|]*?)\s+(if|unless)( +[\w.-:]+)?:\s+(.+?)\s*(?=(\s\| +[\w.-]+.*)|$)\6*/u
       |> Regex.replace(line, fn
         _, f1, f2, f3, "", f5, "" -> "#{f1}| #{f3} #{f5} do #{f2} | end"
         _, f1, f2, f3, "", f5, f6 -> "#{f1}| #{f3} #{f5} do #{f2} | else#{f6} | end"
@@ -157,16 +166,16 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_do_opts do
-    line1 = ~r/((?:^ *| +)\| +[\w.-]+[^\|]*) +do: +(\| +.+)/u
+    line1 = ~R/((?:^ *| +)\| +[\w.-]+[^\|]*) +do: +(\| +.+)/u
       |> Regex.replace(line, "\\1 do \\2 | end")
 
-    line2 = ~r/(^ *| +)\| +([\w.-]+)( +[^\|]*?)do(?= *$| +\| +[\w.-]+)/u
+    line2 = ~R/(^ *| +)\| +([\w.-]+)( +[^\|]*?)do(?= *$| +\| +[\w.-]+)/u
       |> Regex.replace(line1, "\\1| do.\\2\\3")
     {line2, no}
   end
 
   defp do_fix_line_syntax {line, no}, :fix_question_mark do
-    line2 = ~r/(^ *)\| +([\w.-]+)\? *?(.*?)([\w.-:]+: +.+?)?(?=(\s+\| +[\w.-]+.*)|\s*$)\5?/u
+    line2 = ~R/(^ *)\| +([\w.-]+)\? *?(.*?)([\w.-:]+: +.+?)?(?=(\s+\| +[\w.-]+.*)|\s*$)\5?/u
       |> Regex.replace(line, fn
         _, _1, _2, "", _4, "" -> ""
         _, f1, f2, "", _4, f5 -> "#{f1}| unless do #{f2}#{f5} | end"
@@ -177,7 +186,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_array_bracket do
-    if Regex.match? ~r/^ *\| +\w+/u, line do
+    if Regex.match? ~R/^ *\| +\w+/u, line do
       {Mappy.transform(line), no}
     else
       {line, no}
@@ -187,7 +196,7 @@ defmodule Dex.Service.Parsers.XML do
   @spec remove_block_comments(%State{}) :: %State{}
 
   defp remove_block_comments state do
-    script = ~r/(\s+)\/\*[\s\S]+?\*\/(?=\s+)/u
+    script = ~R/(\s+)\/\*[\s\S]+?\*\/(?=\s+)/u
       |> Regex.replace(state.script, "\\1")
     %{state | script: script}
   end
@@ -205,10 +214,10 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp prepend_pipes state do
-    regex = ~r/(@lang\s+pipescript[\s\S]+?)<([\w.-]+)([^>]*?)>([\s\S]+?)<\/\2>/u
+    regex = ~R/(@lang\s+pipescript[\s\S]+?)<([\w.-]+)([^>]*?)>([\s\S]+?)<\/\2>/u
     res = Regex.replace regex, state.script, fn
       _match, f1, f2, f3, f4 ->
-        new_f4 = Regex.replace ~r/((?:\r?\n|^)\s*)([\w.-]+)/u, f4, fn
+        new_f4 = Regex.replace ~R/((?:\r?\n|^)\s*)([\w.-]+)/u, f4, fn
           _match, f1, f2 -> f1 <> "| " <> f2
         end
         "#{f1}<#{f2}#{f3}>#{new_f4}</#{f2}>"
@@ -217,49 +226,49 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_pipescript_with_do state do
-    regex = ~r/(<\s*(?!do|fn)[^>]*>\s*?)(\| +[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w.-]+)/u
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\| +[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w.-]+)/u
     replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp wrap_noparse_with_cdata state do
-    regex = ~r/((?:@noparse)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>([\s\S]+?)<\/\s*\2\3>/u
+    regex = ~R/((?:@noparse)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ ~// \\5 ]]> </\\2>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp wrap_annot_cdata state do
-    regex = ~r/((?:@cdata\s|@lang\s)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
+    regex = ~R/((?:@cdata\s|@lang\s)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ \\5 ]]> </\\2>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp append_line_no state do
-    res = String.split(state.script, ~r/\r?\n/)
+    res = String.split(state.script, ~R/\r?\n/)
     |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
       res = pass? && line || (
-        regex = ~r/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w.-]*[^\s\/>]+|\| +[\w.-]+.*?(?=\s+\| +[\w.-]+|\s*<\/\s*[\w.-]+>|\s*$))/u
+        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w.-]*[^\s\/>]+|\| +[\w.-]+.*?(?=\s+\| +[\w.-]+|\s*<\/\s*[\w.-]+>|\s*$))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
           match, "|" <> _ -> String.rstrip(match) <> " _line: #{no} "
-          match, "@" <> _ -> ~r/(@\w+)(\s*?.*?)(?=\s+@\w+|$)/u
+          match, "@" <> _ -> ~R/(@\w+)(\s*?.*?)(?=\s+@\w+|$)/u
             |> Regex.replace(match, fn _, f1, f2 ->
               "#{f1} ##{no}#{f2}"
             end)
         end
       )
-      pass? = pass? || Regex.match?(~r/<!\[CDATA\[/, line)
-      pass? = pass? && not Regex.match?(~r/]]>/, line)
+      pass? = pass? || Regex.match?(~R/<!\[CDATA\[/, line)
+      pass? = pass? && not Regex.match?(~R/]]>/, line)
       {script <> res <> "\n", (no + 1), pass?}
     end) |> elem(0)
     %{state | script: res}
   end
 
   defp remove_cdata_areas state do
-    regex = ~r/(?<=<\!\[CDATA\[)(?!\s*\|)[\s\S]*?(?=]]>)/u
+    regex = ~R/(?<=<\!\[CDATA\[)(?!\s*\|)[\s\S]*?(?=]]>)/u
     removers = Regex.scan(regex, state.script) |> List.flatten
     script = Regex.replace regex, state.script, "<!cdata!>"
     %{state | removers: removers, script: script}
@@ -273,14 +282,14 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_script_with_cdata state do
-    regex = ~r/<\s*(do|fn)([^\>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\1\s*>/u
+    regex = ~R/<\s*(do|fn)([^\>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\1\s*>/u
     replace_stmt = ~s(<\\1\\2> <![CDATA[ \\3 ]]> </\\1>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp fix_pipe_comments state do
-    regex = ~r/(\s+)'(\| +[\w.-]+)/u
+    regex = ~R/(\s+)'(\| +[\w.-]+)/u
     res = Regex.replace regex, state.script, "\\1\\2"
     %{state | script: res}
   end
@@ -337,7 +346,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp register_functions state do
-    funs = ~r/<fn\s+[\s\S]*?id\s*=\s*(['"])(\w+)\1/u
+    funs = ~R/<fn\s+[\s\S]*?id\s*=\s*(['"])(\w+)\1/u
       |> Regex.scan(state.script)
       |> Enum.map_reduce(0, fn [_match, _quote, id], no ->
         no = no + 1
@@ -362,7 +371,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_set_appenv [%{name: "tags"} = annot | rest], state do
-    tags = Regex.scan(~r/\w+/u, annot.data) |> List.flatten
+    tags = Regex.scan(~R/\w+/u, annot.data) |> List.flatten
     state = put_in state.app.tags, tags
     do_set_appenv rest, state
   end
@@ -429,7 +438,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp extract_opts nil do %{} end
   defp extract_opts opts do
-    ~r/([\w.-:]+): +([\s\S]+?)(?=\s+[\w.-:]+: +|$)/u
+    ~R/([\w.-:]+): +([\s\S]+?)(?=\s+[\w.-:]+: +|$)/u
       |> Regex.scan(opts)
       |> Enum.into(%{}, fn [_match, key, val] ->
         {key, String.rstrip val}
@@ -631,14 +640,14 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_vars state = %{str: str}, :remove_reserved do
-    re = ~r/~[a-z]+\/.*?\/[a-z]*/u
+    re = ~R/~[a-z]+\/.*?\/[a-z]*/u
     reserved = Regex.scan(re, str) |> List.flatten
     str = Regex.replace re, str, "<!reserved!>"
     %{state | str: str, reserved: reserved}
   end
 
   defp do_transform_vars state = %{str: str}, :remove_quotations  do
-    re = ~r/".+?"/u
+    re = ~R/".+?"/u
     quots = Regex.scan(re, str) |> List.flatten
     str = Regex.replace re, str, "<!quot!>"
     %{state | str: str, quots: quots}
@@ -668,19 +677,19 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp replace_vars str do
-    ~r/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w.:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|\n|$)/u
+    ~R/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w.:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|\n|$)/u
       |> Regex.replace(str, ~s/\\1val!("\\2",s)\\3/)
   end
 
   defp transform_sharp_brackets str, state do
-    Regex.replace ~r/#\{([\s\S]+?)\}/u, str, fn _match, f1 ->
+    Regex.replace ~R/#\{([\s\S]+?)\}/u, str, fn _match, f1 ->
       f1 = Mappy.transform(f1) |> replace_vars |> extract_funs(state) 
       "\#{#{f1}}"
     end
   end
 
   defp replace_map str do
-    ~r/(?<=[\{,])\s*([\w.-]+): *(?=.+?\s*,\s*[\w.-]+: +|.*\s*}|$)/u
+    ~R/(?<=[\{,])\s*([\w.-]+): *(?=.+?\s*,\s*[\w.-]+: +|.*\s*}|$)/u
       |> Regex.replace(str, fn _, f1 -> ~s("#{f1}"=>) end)
   end
 
@@ -710,7 +719,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp split_opts str do
-    ~r/(?:\s+|^)([\w.-:]+): +([\s\S]+?)(?=,?\s+[\w.-:]+: +|$)/u
+    ~R/(?:\s+|^)([\w.-:]+): +([\s\S]+?)(?=,?\s+[\w.-:]+: +|$)/u
       |> Regex.scan(str)
       |> Enum.into(%{}, fn [_, k, v] -> {k, v} end)
   end
@@ -727,17 +736,17 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_maps str, :transform_key do
-    ~r/(?<!%){(?:\s*[\w.-]+: *[\s\S]+?,)*\s*[\w.-]*: *[\s\S]*?}/u
+    ~R/(?<!%){(?:\s*[\w.-]+: *[\s\S]+?,)*\s*[\w.-]*: *[\s\S]*?}/u
       |> Regex.replace(str, &replace_map &1)
   end
 
   defp do_transform_maps str, :transform_empty do
-    ~r/(?<!%){\s*:\s*}/u
+    ~R/(?<!%){\s*:\s*}/u
       |> Regex.replace(str, "%{}")
   end
 
   defp do_transform_maps str, :prepend_head do
-    ~r/(?<!%){\s*"[\w.-]+"\s*=>/u
+    ~R/(?<!%){\s*"[\w.-]+"\s*=>/u
       |> Regex.replace(str, &("%#{String.strip &1}"))
   end
 
@@ -793,7 +802,7 @@ defmodule Dex.Service.Parsers.XML do
     script = case List.last lines do
       "" -> "return null"
       last -> 
-        case Regex.run(~r/ *(?=return\s.+$)/, last) do
+        case Regex.run(~R/ *(?=return\s.+$)/, last) do
           [""] -> state.cdata
           nil -> raise Error.SyntaxError,
             reason: "missed 'return' in Javascript", state: state
@@ -832,21 +841,21 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp inspect_val str = "[" <> _, state do
-    case Regex.match? ~r/^\[.*\]$/u, str do
+    case Regex.match? ~R/^\[.*\]$/u, str do
       true -> str |> transform_vars(state)
       false -> inspect str
     end
   end
 
   defp inspect_val str = "{" <> _, state do
-    case Regex.match? ~r/^\{.*}$/u, str do
+    case Regex.match? ~R/^\{.*}$/u, str do
       true -> str |> transform_vars(state)
       false -> inspect str
     end
   end
 
   defp inspect_val str = "%{" <> _, state do
-    case Regex.match? ~r/^%\{.*}$/u, str do
+    case Regex.match? ~R/^%\{.*}$/u, str do
       true -> str |> transform_vars(state)
       false -> inspect str
     end
@@ -857,7 +866,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp inspect_val str, state do
-    case Regex.match? ~r/\#{.*?}/u, str do
+    case Regex.match? ~R/\#{.*?}/u, str do
       true -> ~s/"#{str}"/ |> transform_sharp_brackets(state)
       false when str in ~w(true false nil) -> str
       false -> inspect str
@@ -1057,7 +1066,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_extract_funs str, cnt, state do
-    regex = ~r/([\w.-]*\w+)\(([^\(\)]*)\)/u
+    regex = ~R/([\w.-]*\w+)\(([^\(\)]*)\)/u
     if Regex.match? regex, str do
         Regex.replace(regex, str, fn _, fun, arg_opt ->
           fun_ref = Routes.fn! fun, state
@@ -1074,14 +1083,14 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp replace_do! str do
-    Regex.replace ~r/<do!|!do>/u, str, fn
+    Regex.replace ~R/<do!|!do>/u, str, fn
       "<do!" -> "do!("
       "!do>" -> ")"
     end
   end
 
   defp split_args_opts str do
-    ~r/(.*?)(?=,? +(\w+: +.+)|$)/u
+    ~R/(.*?)(?=,? +(\w+: +.+)|$)/u
       |> Regex.scan(str) |> List.first
       |> case do
         [_match, args] -> {args, ""}
@@ -1090,7 +1099,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp extract_pipes state do
-    res = ~r/(?:^|\s)\| +(\S+)([\s\S]*?),?(\s+[\w.-:]+: +[\s\S]+?)?(?=\s+\| +\S+|\s*$)/u
+    res = ~R/(?:^|\s)\| +(\S+)([\s\S]*?),?(\s+[\w.-:]+: +[\s\S]+?)?(?=\s+\| +\S+|\s*$)/u
       |> Regex.scan(state.cdata)
       |> Enum.map(fn list ->
         args = (Enum.at(list, 2) || "") 
@@ -1109,7 +1118,7 @@ defmodule Dex.Service.Parsers.XML do
   defp line "", default do default end
 
   defp line(str, default) when is_bitstring(str) do
-    case Regex.run(~r/(?<= _line: )[0-9]+/u, str) do
+    case Regex.run(~R/(?<= _line: )[0-9]+/u, str) do
       nil -> default
       [line] -> line
     end

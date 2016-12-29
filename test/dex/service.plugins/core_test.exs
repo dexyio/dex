@@ -303,4 +303,24 @@ defmodule Dex.Service.Plugins.CoreTest do
     """ |> assert!(nil)
   end
 
+  test "type casting" do
+    ~S"""
+    @dexyml
+    | nil           | to_string | assert ""
+    | set 1         | to_string | assert "1"
+    | set "foo"     | to_string | assert "foo"
+    | set []        | to_string | assert "[]"
+    | set {}        | to_string | assert "{}"
+    | set {1, 2, 3} | to_string | assert "{1, 2, 3}"
+    | set {:}       | to_string | assert "{}"
+    | set {a:1,b:1} | to_string | assert "{\"b\":1,\"a\":1}"
+    | nil
+    """ |> assert!(nil)
+    ~S"""
+    @dexyml
+    | nil           | to_map | assert {:}
+    | nil
+    """ |> assert!(nil)
+  end
+
 end

@@ -38,7 +38,7 @@ defmodule DexTest do
     @dexyml
     | set nil
     | #$@$@$
-    """ |> assert_raise!(Dex.Error.FunctionNotFound)
+    """ |> assert_raise!(Dex.Error.SyntaxError)
   end
 
   test "syntax error" do

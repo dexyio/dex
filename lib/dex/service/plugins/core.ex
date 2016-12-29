@@ -2,7 +2,9 @@ defmodule Dex.Service.Plugins.Core do
 
   use Dex.Common
   use Dex.Service.Helper
+  use DexyLib, as: Lib
   alias DexyLib.Mappy
+  alias DexyLib.JSON
   alias Dex.Service.Seater
   alias Dex.Service.App
 
@@ -187,7 +189,26 @@ defmodule Dex.Service.Plugins.Core do
 
   defp do_to_string(state, nil) do {state, ""} end
   defp do_to_string(state, data) when is_bitstring(data) do state end
-  defp do_to_string(state, data) do {state, Kernel.to_string data} end
+  defp do_to_string(state, data) when is_number(data) do {state, Kernel.to_string data} end
+  defp do_to_string(state, data) when is_tuple(data) do {state, inspect data} end
+  defp do_to_string(state, data) do
+    case JSON.encode data do
+      {:ok, val} -> {state, val}
+      {:error, _} -> {state, inspect data}
+    end
+  end
+
+  @spec to_map(state) :: {state, map}
+
+  def to_map state = %{args: []} do do_to_map state, data! state end
+  def to_map state = %{args: [data]} do do_to_map state, data end
+
+  defp do_to_map(state, nil) do {state, %{}} end
+  defp do_to_map(state, {key, val}) do {state, %{key => val}} end
+  defp do_to_map(state, data) when is_list(data) do
+    map = for {key, val} <- data, into: %{}, do: {key, val}
+    {state, map}
+  end
 
   @spec is_nil_(state) :: {state, boolean}
 
