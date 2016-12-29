@@ -152,7 +152,10 @@ defmodule Dex.Service.Plugins.Core do
   @spec map(state) :: {state, map}
 
   def map state = %{opts: opts} do
-    {state, opts}
+    res = Enum.reduce opts, %{}, fn {k, v}, map ->
+      Mappy.set map, k, v
+    end
+    {state, res}
   end
 
   @spec to_tuple(state) :: {state, tuple}

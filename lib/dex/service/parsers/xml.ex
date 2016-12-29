@@ -155,7 +155,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_ifunless_opts do
-    line2 = ~R/(^|\s)(\| +[\w.-]+[^\|]*?)\s+(if|unless)( +[\w.-:]+)?:\s+(.+?)\s*(?=(\s\| +[\w.-]+.*)|$)\6*/u
+    line2 = ~R/(^|\s)(\| +[\w\.\-]+[^\|]*?)\s+(if|unless)( +[\w\.\-:]+)?:\s+(.+?)\s*(?=(\s\| +[\w\.\-]+.*)|$)\6*/u
       |> Regex.replace(line, fn
         _, f1, f2, f3, "", f5, "" -> "#{f1}| #{f3} #{f5} do #{f2} | end"
         _, f1, f2, f3, "", f5, f6 -> "#{f1}| #{f3} #{f5} do #{f2} | else#{f6} | end"
@@ -166,16 +166,16 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_do_opts do
-    line1 = ~R/((?:^ *| +)\| +[\w.-]+[^\|]*) +do: +(\| +.+)/u
+    line1 = ~R/((?:^ *| +)\| +[\w\.\-]+[^\|]*) +do: +(\| +.+)/u
       |> Regex.replace(line, "\\1 do \\2 | end")
 
-    line2 = ~R/(^ *| +)\| +([\w.-]+)( +[^\|]*?)do(?= *$| +\| +[\w.-]+)/u
+    line2 = ~R/(^ *| +)\| +([\w\.\-]+)( +[^\|]*?)do(?= *$| +\| +[\w\.\-]+)/u
       |> Regex.replace(line1, "\\1| do.\\2\\3")
     {line2, no}
   end
 
   defp do_fix_line_syntax {line, no}, :fix_question_mark do
-    line2 = ~R/(^ *)\| +([\w.-]+)\? *?(.*?)([\w.-:]+: +.+?)?(?=(\s+\| +[\w.-]+.*)|\s*$)\5?/u
+    line2 = ~R/(^ *)\| +([\w\.\-]+)\? *?(.*?)([\w\.\-:]+: +.+?)?(?=(\s+\| +[\w\.\-]+.*)|\s*$)\5?/u
       |> Regex.replace(line, fn
         _, _1, _2, "", _4, "" -> ""
         _, f1, f2, "", _4, f5 -> "#{f1}| unless do #{f2}#{f5} | end"
@@ -214,10 +214,10 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp prepend_pipes state do
-    regex = ~R/(@lang\s+pipescript[\s\S]+?)<([\w.-]+)([^>]*?)>([\s\S]+?)<\/\2>/u
+    regex = ~R/(@lang\s+pipescript[\s\S]+?)<([\w\.\-]+)([^>]*?)>([\s\S]+?)<\/\2>/u
     res = Regex.replace regex, state.script, fn
       _match, f1, f2, f3, f4 ->
-        new_f4 = Regex.replace ~R/((?:\r?\n|^)\s*)([\w.-]+)/u, f4, fn
+        new_f4 = Regex.replace ~R/((?:\r?\n|^)\s*)([\w\.\-]+)/u, f4, fn
           _match, f1, f2 -> f1 <> "| " <> f2
         end
         "#{f1}<#{f2}#{f3}>#{new_f4}</#{f2}>"
@@ -226,21 +226,21 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_pipescript_with_do state do
-    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\| +[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w.-]+)/u
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\| +[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
     replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp wrap_noparse_with_cdata state do
-    regex = ~R/((?:@noparse)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>([\s\S]+?)<\/\s*\2\3>/u
+    regex = ~R/((?:@noparse)[^<]*)<\s*([\w\.\-]+)((?::\w+)?)([^>]*)>([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ ~// \\5 ]]> </\\2>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
   defp wrap_annot_cdata state do
-    regex = ~R/((?:@cdata\s|@lang\s)[^<]*)<\s*([\w.-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
+    regex = ~R/((?:@cdata\s|@lang\s)[^<]*)<\s*([\w\.\-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ \\5 ]]> </\\2>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
@@ -250,7 +250,7 @@ defmodule Dex.Service.Parsers.XML do
     res = String.split(state.script, ~R/\r?\n/)
     |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
       res = pass? && line || (
-        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w.-]*[^\s\/>]+|\| +[\w.-]+.*?(?=\s+\| +[\w.-]+|\s*<\/\s*[\w.-]+>|\s*$))/u
+        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\| +[\w\.\-]+.*?(?=\s+\| +[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
           match, "|" <> _ -> String.rstrip(match) <> " _line: #{no} "
@@ -289,7 +289,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp fix_pipe_comments state do
-    regex = ~R/(\s+)'(\| +[\w.-]+)/u
+    regex = ~R/(\s+)'(\| +[\w\.\-]+)/u
     res = Regex.replace regex, state.script, "\\1\\2"
     %{state | script: res}
   end
@@ -438,7 +438,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp extract_opts nil do %{} end
   defp extract_opts opts do
-    ~R/([\w.-:]+): +([\s\S]+?)(?=\s+[\w.-:]+: +|$)/u
+    ~R/([\w\.\-:]+): +([\s\S]+?)(?=\s+[\w\.\-:]+: +|$)/u
       |> Regex.scan(opts)
       |> Enum.into(%{}, fn [_match, key, val] ->
         {key, String.rstrip val}
@@ -446,7 +446,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp regex(:annot, name) do
-    regex = ~S/(?:^|\s)@(/ <> name <> ~S/)\s#([0-9]+)([\s\S]*?)(?=$|\s*\n|\s+@\w+\s|\s+<\/?[\w.-]+|(\s+\w+:\s[^@<\n]+))\4*/
+    regex = ~S/(?:^|\s)@(/ <> name <> ~S/)\s#([0-9]+)([\s\S]*?)(?=$|\s*\n|\s+@\w+\s|\s+<\/?[\w\.\-]+|(\s+\w+:\s[^@<\n]+))\4*/
     {:ok, res} = Regex.compile(regex, "iu")
     res
   end
@@ -677,7 +677,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp replace_vars str do
-    ~R/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w.:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|\n|$)/u
+    ~R/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w\.\:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|\n|$)/u
       |> Regex.replace(str, ~s/\\1val!("\\2",s)\\3/)
   end
 
@@ -689,7 +689,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp replace_map str do
-    ~R/(?<=[\{,])\s*([\w.-]+): *(?=.+?\s*,\s*[\w.-]+: +|.*\s*}|$)/u
+    ~R/(?<=[\{,])\s*([\w\.\-]+): *(?=.+?\s*,\s*[\w\.\-]+: +|.*\s*}|$)/u
       |> Regex.replace(str, fn _, f1 -> ~s("#{f1}"=>) end)
   end
 
@@ -719,7 +719,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp split_opts str do
-    ~R/(?:\s+|^)([\w.-:]+): +([\s\S]+?)(?=,?\s+[\w.-:]+: +|$)/u
+    ~R/(?:\s+|^)([\w\.\-:]+): +([\s\S]+?)(?=,?\s+[\w\.\-:]+: +|$)/u
       |> Regex.scan(str)
       |> Enum.into(%{}, fn [_, k, v] -> {k, v} end)
   end
@@ -736,7 +736,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_maps str, :transform_key do
-    ~R/(?<!%){(?:\s*[\w.-]+: *[\s\S]+?,)*\s*[\w.-]*: *[\s\S]*?}/u
+    ~R/(?<!%){(?:\s*[\w\.\-]+: *[\s\S]+?,)*\s*[\w\.\-]*: *[\s\S]*?}/u
       |> Regex.replace(str, &replace_map &1)
   end
 
@@ -746,7 +746,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_maps str, :prepend_head do
-    ~R/(?<!%){\s*"[\w.-]+"\s*=>/u
+    ~R/(?<!%){\s*"[\w\.\-]+"\s*=>/u
       |> Regex.replace(str, &("%#{String.strip &1}"))
   end
 
@@ -1066,7 +1066,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_extract_funs str, cnt, state do
-    regex = ~R/([\w.-]*\w+)\(([^\(\)]*)\)/u
+    regex = ~R/([\w\.\-]*\w+)\(([^\(\)]*)\)/u
     if Regex.match? regex, str do
         Regex.replace(regex, str, fn _, fun, arg_opt ->
           fun_ref = Routes.fn! fun, state
@@ -1099,7 +1099,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp extract_pipes state do
-    res = ~R/(?:^|\s)\| +(\S+)([\s\S]*?),?(\s+[\w.-:]+: +[\s\S]+?)?(?=\s+\| +\S+|\s*$)/u
+    res = ~R/(?:^|\s)\| +(\S+)([\s\S]*?),?(\s+[\w\.\-:]+: +[\s\S]+?)?(?=\s+\| +\S+|\s*$)/u
       |> Regex.scan(state.cdata)
       |> Enum.map(fn list ->
         args = (Enum.at(list, 2) || "") 
