@@ -108,8 +108,10 @@ config :dex, Dex.Service.Plugins,
   app:    Dex.Service.Plugins.App,
   kv:     DexyPluginKV,
   json:   DexyPluginJson,
+  http:   DexyPluginHTTP,
   mail:   DexyPluginMail,
-  crypto: DexyPluginCrypto
+  crypto: DexyPluginCrypto,
+  datetime: DexyPluginDatetime
 
 
 #
@@ -123,6 +125,9 @@ config :dexy_lib, DexyLib.JSON,
 # Dexy Plugins
 #
 config :dexy_plugin_json, DexyPluginJson, []
+
+config :dexy_plugin_json, DexyPluginHTTP,
+  adapter: DexyPluginHTTP.Adapters.HTTPoison
 
 config :dexy_plugin_kv, DexyPluginKV,
   bucket: <<g_PLUGIN_BUCKET_IDX[:KV]>>,

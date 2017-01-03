@@ -76,7 +76,9 @@ defmodule Dex.Mixfile do
       {:dexy_lib, github: "dexyio/dexy_lib"},
       {:dexy_plugin_kv, github: "dexyio/dexy_plugin_kv"},
       {:dexy_plugin_json, github: "dexyio/dexy_plugin_json"},
+      {:dexy_plugin_http, github: "dexyio/dexy_plugin_http"},
       {:dexy_plugin_mail, github: "dexyio/dexy_plugin_mail"},
+      {:dexy_plugin_datetime, github: "dexyio/dexy_plugin_datetime"},
 
       {:con_cache, "~> 0.11.1"},
       {:ex_doc, "~> 0.14", only: :dev},

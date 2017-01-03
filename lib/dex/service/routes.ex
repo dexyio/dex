@@ -88,8 +88,11 @@ defmodule Dex.Service.Routes do
       fun = String.to_existing_atom(fun)
       (function_exported? mod, fun, 1) |> case do 
         true -> "&#{short_mod mod}.#{fun}/1"
-        false -> (function_exported? mod, :on_call, 1)
-          || throw {:notfound, mod <> "." <> fun}
+        false ->
+          case (function_exported? mod, :on_call, 1) do
+            true -> "&#{short_mod mod}.on_call/1"
+            false -> throw {:notfound, mod <> "." <> fun}
+          end
       end
     rescue
       ArgumentError -> throw {:notfound, fun}
