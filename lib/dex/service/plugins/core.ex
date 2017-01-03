@@ -481,14 +481,14 @@ defmodule Dex.Service.Plugins.Core do
 
   @spec assert(state) :: state
 
-  def assert state = %{args: [arg | _], opts: opts} do
+  def assert state = %{args: [arg], opts: opts} do
     assert %{state | args: [], opts: Map.put(opts, "data", arg)}
   end
 
   def assert state = %{mappy: map, args: [], opts: opts} do
     case do_assert(opts |> Map.to_list, map) do
       true -> state
-      {k, v} -> raise Error.AssertionFailed, reason: [k, v], state: state
+      {left, right} -> raise Error.AssertionFailed, reason: [left, right], state: state
     end
   end
 
@@ -497,9 +497,9 @@ defmodule Dex.Service.Plugins.Core do
   defp do_assert [{k, v} | rest], map do
     case Mappy.val map, k do
       ^v -> do_assert rest, map
-      val when v == true -> val && do_assert(rest, map) || {v, val}
-      val when v == false -> !val && do_assert(rest, map) || {v, val}
-      val -> {v, val}
+      val when v == true -> val && do_assert(rest, map) || {val, v}
+      val when v == false -> !val && do_assert(rest, map) || {val, v}
+      val -> {val, v}
     end
   end
 
