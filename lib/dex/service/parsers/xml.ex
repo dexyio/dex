@@ -166,9 +166,8 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_do_opts do
-    line1 = ~R/((?:^ *|\s+)\|\s+[\w\.\-]+[^\|]*) +do: +(\|\s+.+)/u
-      |> Regex.replace(line, "\\1 do \\2 | end")
-
+    line1 = ~R/((?:^ *|\s+)\|\s+[\w\.\-]+[^\|]*)\s+do:\s+((?:\|\s+)?)(.+)/u
+      |> Regex.replace(line, "\\1 do | \\3 | end")
     line2 = ~R/(\s*\|\s+)([\w\.\-]+)(\s+[^\|]*?)do(?=\s*$|\s+\|\s+[\w\.\-]+)/u
       |> Regex.replace(line1, "\\1do.\\2\\3")
     {line2, no}
@@ -640,7 +639,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_vars state = %{str: str}, :remove_reserved do
-    re = ~R/~[a-z]+\/.*?\/[a-z]*|(?<=\s)(?:and|or|not)\s+/u
+    re = ~R/~[a-z]+\/.*?\/[a-z]*|(?<=\s)(?:and|or)\s+/u
     reserved = Regex.scan(re, str) |> List.flatten
     str = Regex.replace re, str, "<!reserved!>"
     %{state | str: str, reserved: reserved}
