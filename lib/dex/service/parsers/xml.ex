@@ -143,7 +143,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_noset_value do
-    line2 = ~R/(\s*\|\s+)([0-9]|[^\w\s])(.*?)(?=\s+\| +|\s*$)/u
+    line2 = ~R/(\s*\|\s+)([0-9]|[^\w\s])(.*?)(?=\s+\|\s+|\s*$)/u
       |> Regex.replace(line, "\\1set \\2\\3")
     {line2, no} 
   end
@@ -155,7 +155,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_ifunless_opts do
-    line2 = ~R/(^|\s)(\| +[\w\.\-]+[^\|]*?)\s+(if|unless)( +[\w\.\-:]+)?:\s+(.+?)\s*(?=(\s\| +[\w\.\-]+.*)|$)\6*/u
+    line2 = ~R/(^|\s)(\|\s+[\w\.\-]+[^\|]*?)\s+(if|unless)( +[\w\.\-:]+)?:\s+(.+?)\s*(?=(\s\|\s+[\w\.\-]+.*)|$)\6*/u
       |> Regex.replace(line, fn
         _, f1, f2, f3, "", f5, "" -> "#{f1}| #{f3} #{f5} do #{f2} | end"
         _, f1, f2, f3, "", f5, f6 -> "#{f1}| #{f3} #{f5} do #{f2} | else#{f6} | end"
@@ -166,16 +166,16 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_do_opts do
-    line1 = ~R/((?:^ *| +)\| +[\w\.\-]+[^\|]*) +do: +(\| +.+)/u
+    line1 = ~R/((?:^ *|\s+)\|\s+[\w\.\-]+[^\|]*) +do: +(\|\s+.+)/u
       |> Regex.replace(line, "\\1 do \\2 | end")
 
-    line2 = ~R/(^ *| +)\| +([\w\.\-]+)( +[^\|]*?)do(?= *$| +\| +[\w\.\-]+)/u
-      |> Regex.replace(line1, "\\1| do.\\2\\3")
+    line2 = ~R/(\s*\|\s+)([\w\.\-]+)(\s+[^\|]*?)do(?=\s*$|\s+\|\s+[\w\.\-]+)/u
+      |> Regex.replace(line1, "\\1do.\\2\\3")
     {line2, no}
   end
 
   defp do_fix_line_syntax {line, no}, :fix_question_mark do
-    line2 = ~R/(^ *)\| +([\w\.\-]+)\? *?(.*?)([\w\.\-:]+: +.+?)?(?=(\s+\| +[\w\.\-]+.*)|\s*$)\5?/u
+    line2 = ~R/(^ *)\|\s+([\w\.\-]+)\? *?(.*?)([\w\.\-:]+: +.+?)?(?=(\s+\|\s+[\w\.\-]+.*)|\s*$)\5?/u
       |> Regex.replace(line, fn
         _, _1, _2, "", _4, "" -> ""
         _, f1, f2, "", _4, f5 -> "#{f1}| unless do #{f2}#{f5} | end"
@@ -186,7 +186,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_array_bracket do
-    if Regex.match? ~R/^ *\| +\w+/u, line do
+    if Regex.match? ~R/^ *\|\s+\w+/u, line do
       {Mappy.transform(line), no}
     else
       {line, no}
@@ -226,7 +226,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_pipescript_with_do state do
-    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\| +[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
     replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
@@ -250,7 +250,7 @@ defmodule Dex.Service.Parsers.XML do
     res = String.split(state.script, ~R/\r?\n/)
     |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
       res = pass? && line || (
-        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\| +[\w\.\-]+.*?(?=\s+\| +[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
+        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+.*?(?=\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
           match, "|" <> _ -> String.rstrip(match) <> " _line: #{no} "
@@ -289,7 +289,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp fix_pipe_comments state do
-    regex = ~R/(\s+)'(\| +[\w\.\-]+)/u
+    regex = ~R/(\s+)'(\|\s+[\w\.\-]+)/u
     res = Regex.replace regex, state.script, "\\1\\2"
     %{state | script: res}
   end
@@ -397,7 +397,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp parse_xml! state do
-    #IO.puts state.script
+    IO.puts state.script
     try do
       state.script
         |> :erlsom.parse_sax(state, &sax_event_handler/2)
@@ -1099,7 +1099,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp extract_pipes state do
-    res = ~R/(?:^|\s)\| +(\S+)([\s\S]*?),?(\s+[\w\.\-:]+: +[\s\S]+?)?(?=\s+\| +\S+|\s*$)/u
+    res = ~R/(?:^|\s)\|\s+(\S+)([\s\S]*?),?(\s+[\w\.\-:]+: +[\s\S]+?)?(?=\s+\|\s+\S+|\s*$)/u
       |> Regex.scan(state.cdata)
       |> Enum.map(fn list ->
         args = (Enum.at(list, 2) || "") 
