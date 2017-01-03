@@ -4,12 +4,8 @@ defmodule Dex.Service.Plugins.App do
   use Dex.Service.Helper
   alias Dex.Service.App
 
-  def get state do
-    auth_basic!(state) |> get_
-  end
-
-  defp get_ state = %{args: []} do do_get state, data! state end
-  defp get_ state = %{args: [data]} do do_get state, data end
+  def get state = %{args: []} do do_get state, data! state end
+  def get state = %{args: [data]} do do_get state, data end
 
   defp do_get state = %{user: user}, app_id do
     case App.get(user.id, app_id) do
