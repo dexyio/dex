@@ -677,7 +677,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp replace_vars str do
-    ~R/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w\.\:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|\n|$)/u
+    ~R/([,\(\[\{:\+\-\*\/><=]|^|<>)\s*(\p{L}[\w\.\:-]*)\s*(?=[\+\-\*\/><=,\)\]\}]|!=|\n|$)/u
       |> Regex.replace(str, ~s/\\1val!("\\2",s)\\3/)
   end
 
