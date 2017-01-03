@@ -50,7 +50,7 @@ defmodule Dex.Service.Parsers.XML do
   @type annotations :: map
 
   @global_annots ~w(id title export tags use disable appdoc set)
-  @block_annots ~w(public private lang doc noparse cdata)
+  @block_annots ~w(public protected private lang doc noparse cdata)
 
   @spec parse!(bitstring, bitstring) :: %Dex.Service.App{}
 
