@@ -115,6 +115,7 @@ defmodule Dex.Service.Worker do
       |> Mappy.set("req.opts", req.opts)
       |> Mappy.set("req.header", req.header)
       |> Mappy.set("req.body", req.body)
+      |> Mappy.set("req.remote_ip", req.remote_ip)
       |> Mappy.merge(req.vars)
     %{state | mappy: map, args: req.args, opts: req.opts}
   end

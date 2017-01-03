@@ -10,7 +10,8 @@ defmodule Dex.Service.Request do
             vars: %{},
             header: %{},
             body: "",
-            callback: nil
+            callback: nil,
+            remote_ip: []
 
   @type t :: %__MODULE__{
     id: bitstring,
@@ -23,7 +24,8 @@ defmodule Dex.Service.Request do
     vars: map,
     header: map,
     body: map,
-    callback: pid
+    callback: pid,
+    remote_ip: list
   }
 
 
