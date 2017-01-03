@@ -225,7 +225,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_pipescript_with_do state do
-    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?)_line: ([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?):([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
     replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
@@ -249,10 +249,11 @@ defmodule Dex.Service.Parsers.XML do
     res = String.split(state.script, ~R/\r?\n/)
     |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
       res = pass? && line || (
-        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+.*?(?=\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
+      #regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+.*?(?=\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
+        regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+(?=.*?\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|.*))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
-          match, "|" <> _ -> String.rstrip(match) <> " _line: #{no} "
+          match, "|" <> _ -> String.rstrip(match) <> ":#{no}"
           match, "@" <> _ -> ~R/(@\w+)(\s*?.*?)(?=\s+@\w+|$)/u
             |> Regex.replace(match, fn _, f1, f2 ->
               "#{f1} ##{no}#{f2}"
@@ -396,7 +397,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp parse_xml! state do
-    IO.puts state.script
+    #IO.puts state.script
     try do
       state.script
         |> :erlsom.parse_sax(state, &sax_event_handler/2)
@@ -562,8 +563,8 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp pipes_to_codes {state, pipes} do
-    Enum.reduce pipes, {state, ""}, fn {fun, args, opts}, {state, codes} ->
-      state = %{state | line: line(opts, state.line)}
+    Enum.reduce pipes, {state, ""}, fn {fun, args, opts, line}, {state, codes} ->
+      state = %{state | line: line}
       args = translate_args args, state
       opts = translate_opts opts, state
       do_pipes_to_codes {state, codes}, {fun, args, opts}
@@ -1070,7 +1071,6 @@ defmodule Dex.Service.Parsers.XML do
         Regex.replace(regex, str, fn _, fun, arg_opt ->
           fun_ref = Routes.fn! fun, state
           {args, opts} = split_args_opts(arg_opt)
-          #args = translate_args args
           args = transform_maps(args) |> wrap_args
           opts = translate_opts opts, state
           "s |> <do!#{state.line}, #{inspect fun}, #{fun_ref}, #{args}, #{opts}!do> |> data!"
@@ -1103,25 +1103,22 @@ defmodule Dex.Service.Parsers.XML do
       |> Enum.map(fn list ->
         args = (Enum.at(list, 2) || "") 
         opts = (Enum.at(list, 3) || "")
-        fun  = Enum.at(list, 1) |> String.downcase
-        {fun, args, opts}
+        {fun, line} = Enum.at(list, 1) |> String.downcase |> split_funline(state)
+        {fun, args, opts, line}
       end)
       {state, res}
+  end
+
+  defp split_funline funline, state do
+    case String.split funline, ":" do
+      [^funline] -> {funline, state.line}
+      [fun, line] -> {fun, line}
+    end
   end
 
   defp indents_inc indents do ["  " | indents] end
 
   defp space n do String.ljust("", n, ?\s) end
-
-  defp line nil, default do default end
-  defp line "", default do default end
-
-  defp line(str, default) when is_bitstring(str) do
-    case Regex.run(~R/(?<= _line: )[0-9]+/u, str) do
-      nil -> default
-      [line] -> line
-    end
-  end
 
   defp attrs_to_map attrs, _state do
     if attrs == [] do nil else
