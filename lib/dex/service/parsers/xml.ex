@@ -640,7 +640,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_vars state = %{str: str}, :remove_reserved do
-    re = ~R/~[a-z]+\/.*?\/[a-z]*/u
+    re = ~R/~[a-z]+\/.*?\/[a-z]*|(?<=\s)(?:and|or|not)\s+/u
     reserved = Regex.scan(re, str) |> List.flatten
     str = Regex.replace re, str, "<!reserved!>"
     %{state | str: str, reserved: reserved}
@@ -672,7 +672,7 @@ defmodule Dex.Service.Parsers.XML do
     %{state | str: res}
   end
 
-  defp replace_vars(str) when str in ~w(true, false, nil)  do
+  defp replace_vars(str) when str in ~W(true false nil)  do
     str
   end
 
