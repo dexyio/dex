@@ -178,14 +178,14 @@ defmodule Dex.Service.App do
   end
 
   defp handle_exception ex = %SyntaxError{}, codes do
-    line_no = get_codeline(codes, ex.line + 1) |> get_lineno
+    line_no = get_codeline(codes, ex.line) |> get_lineno
     raise Error.SyntaxError,
       reason: replace_errmsg(ex.description, line_no),
       state: %Dex.Service.State{line: line_no}
   end
 
   defp handle_exception ex = %TokenMissingError{}, codes do
-    line_no = get_codeline(codes, ex.line + 1) |> get_lineno
+    line_no = get_codeline(codes, ex.line) |> get_lineno
     raise Error.SyntaxError,
       reason: replace_errmsg(ex.description, line_no),
       state: %Dex.Service.State{line: line_no}
@@ -210,7 +210,7 @@ defmodule Dex.Service.App do
   defp replace_errmsg str, line_no do
     case Regex.run ~r/(?<=unexpected token: ")[^"]+/u, str do
       nil -> default_errmsg :syntax, line_no
-      [token] -> "unexpected token #{token}"
+      [token] -> "unexpected token #{token} at line #{line_no}"
     end
   end
 
@@ -223,10 +223,10 @@ defmodule Dex.Service.App do
   end
 
   defp get_codeline codes, line do
-    Lib.lines(codes, limit: line)
+    Lib.lines(codes, parts: line)
       |> Enum.reverse
       |> Enum.drop_while(fn x ->
-        regex = ~r/(line: |do!\(s, |defp _L|def _F|defp _F)[0-9]+/
+        regex = ~r/(line:\s+|do!\(s,\s+|defp _L|def _F|defp _F)[0-9]+/u
         not Regex.match?(regex , x)
       end)
       |> List.first

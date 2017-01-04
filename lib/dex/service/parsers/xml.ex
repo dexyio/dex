@@ -1105,20 +1105,20 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp extract_pipes state do
-    res = ~R/(?:^|\s)\|\s+(\S+)([\s\S]*?),?(\s+[\w\.\-:]+: +[\s\S]+?)?(?=\s+\|\s+\S+|\s*$)/u
+    {res, _} = ~R/(?:^|\s)\|\s+(\S+)([\s\S]*?),?(\s+[\w\.\-:]+: +[\s\S]+?)?(?=\s+\|\s+\S+|\s*$)/u
       |> Regex.scan(state.cdata)
-      |> Enum.map(fn list ->
+      |> Enum.map_reduce(0, fn list, line ->
         args = (Enum.at(list, 2) || "") 
         opts = (Enum.at(list, 3) || "")
-        {fun, line} = Enum.at(list, 1) |> String.downcase |> split_funline(state)
-        {fun, args, opts, line}
-      end)
+        {fun, line} = Enum.at(list, 1) |> String.downcase |> split_funline(line)
+        {{fun, args, opts, line}, line}
+      end) 
       {state, res}
   end
 
-  defp split_funline funline, state do
+  defp split_funline funline, old_line do
     case String.split funline, ":" do
-      [^funline] -> {funline, state.line}
+      [^funline] -> {funline, old_line}
       [fun, line] -> {fun, line}
     end
   end
