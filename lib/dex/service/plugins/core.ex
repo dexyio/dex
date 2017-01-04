@@ -185,6 +185,10 @@ defmodule Dex.Service.Plugins.Core do
     {state, Lib.to_number data}
   end
 
+  defp do_to_number(state, data) when is_number(data) do
+    {state, data}
+  end
+
   @spec to_string(state) :: {state, bitstring}
 
   def to_string state = %{args: []} do do_to_string state, data! state end
@@ -527,6 +531,19 @@ defmodule Dex.Service.Plugins.Core do
   defp cond_ state, expected, [{[data], conds, fn_} | rest] do
     conds = Map.put(conds, "data", data)
     cond_ state, expected, [{[], conds, fn_} | rest]
+  end
+
+  def debug state = %{args: [], mappy: map} do
+    {data, vars} = Map.pop map, "data"
+    {req, vars} = Map.pop vars, "req"
+    data = %{
+      "req" => req,
+      "data" => data,
+      "variables" => vars,
+      "line" => state.line
+    }
+    map = Mappy.set map, "data", data
+    raise Error.Stopped, state: %{state | mappy: map}
   end
 
   @spec if_(state) :: state

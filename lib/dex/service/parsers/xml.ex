@@ -117,6 +117,7 @@ defmodule Dex.Service.Parsers.XML do
           {line, no}
             |> do_fix_line_syntax(:remove_line_comment)
             |> do_fix_line_syntax(:check_syntax)
+            |> do_fix_line_syntax(:fix_debug_mark)
             |> do_fix_line_syntax(:fix_noset_value)
             |> do_fix_line_syntax(:fix_element_fn)
             |> do_fix_line_syntax(:fix_ifunless_opts)
@@ -137,9 +138,15 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :check_syntax do
-    Regex.match?(~R/\s*\|[\w:\-\.]+($|\s+)/u, line) && raise Error.SyntaxError,
+    Regex.match?(~R/\s*\|>?[\w:\-\.]+($|\s+)/u, line) && raise Error.SyntaxError,
       reason: line, state: %Dex.Service.State{line: no}
     {line, no} 
+  end
+
+  defp do_fix_line_syntax {line, no}, :fix_debug_mark do
+    line2 = ~R/(^|\s+)\|>\s+/u
+      |> Regex.replace(line, "\\1| debug | ")
+    {line2, no} 
   end
 
   defp do_fix_line_syntax {line, no}, :fix_noset_value do
@@ -640,7 +647,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_transform_vars state = %{str: str}, :remove_reserved do
-    re = ~R/~[a-z]+\/.*?\/[a-z]*|(?<=\s)(?:and|or)\s+/u
+    re = ~R/~[a-z]+\/.*?\/[a-z]*|(?<=\s)(?:and|or|not)\s+/u
     reserved = Regex.scan(re, str) |> List.flatten
     str = Regex.replace re, str, "<!reserved!>"
     %{state | str: str, reserved: reserved}
