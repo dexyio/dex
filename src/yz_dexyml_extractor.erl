@@ -15,7 +15,9 @@ fields([], Acc) ->
 	error_logger:info_msg("yz_dexyml_extractor:fields/2 -> Acc: ~p~n", [Acc]),
 	Acc;
 fields([{bucket, V} = H | T], Acc) when is_bitstring(V) -> fields(T, [H | Acc]);
-fields([{datetime, V} = H | T], Acc) when is_bitstring(V) -> fields(T, [H | Acc]);
+fields([{key, V} = H | T], Acc) when is_bitstring(V) -> fields(T, [H | Acc]);
+fields([{value, V} = H | T], Acc) when is_bitstring(V) -> fields(T, [H | Acc]);
+%fields([{datetime, V} = H | T], Acc) when is_bitstring(V) -> fields(T, [H | Acc]);
 fields([{created, Usecs} | T], Acc) when is_number(Usecs) ->
 	%Secs = trunc(Usecs / 1000000),
 	fields(T, [{created, Usecs} | Acc]);

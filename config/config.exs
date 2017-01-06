@@ -130,8 +130,13 @@ config :dexy_plugin_json, DexyPluginHTTP,
   adapter: DexyPluginHTTP.Adapters.HTTPoison
 
 config :dexy_plugin_kv, DexyPluginKV,
-  bucket: <<g_PLUGIN_BUCKET_IDX[:KV]>>,
   adapter: DexyPluginKV.Adapters.Riak
+
+config :dexy_plugin_kv, DexyPluginKV.Adapters.Riak, [
+  userdata_bucket_type: "userdata",
+  userdata_content_type: "application/dexyml",
+  userdata_index: "idx_userdata",
+]
 
 config :dexy_plugin_mail, DexyPluginMail,
   adapter: DexyPluginMail.Adapters.Bamboo
@@ -140,6 +145,18 @@ config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo,
   adapter: Bamboo.MailgunAdapter,
   api_key: "your-api-key",
   domain: "your-domain"
+
+#
+# Elixir Logger
+#
+config :logger,
+  backends: [:console]
+
+config :logger, :console,
+  level: :debug,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:module]
+
 
 #
 # Erlang/OTP SASL

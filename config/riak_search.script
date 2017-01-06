@@ -1,27 +1,28 @@
 $ iex
+
 >
 pid = :pooler.take_group_member(:riak)
 xml = File.read! "priv/schemas/schema_userdata.xml"
-:riakc_pb_socket.create_search_schema(pid, "schema_userdata", xml)
-:riakc_pb_socket.create_search_index(pid, "idx_userdata", "schema_userdata", [])
+:riakc_pb_socket.create_search_schema(pid, "schema_userdata3", xml)
+:riakc_pb_socket.delete_search_index(pid, "idx_userdata")
+
+:riakc_pb_socket.create_search_index(pid, "idx_userdata", "schema_userdata3", [])
 :pooler.return_group_member(:riak, pid, :ok)
 
 
 $
-riak-admin bucket-type create userdata \
-'{"props":{"search_index":"idx_userdata","allow_mult":false,"last_write_wins":true}}'
-riak-admin bucket-type activate userdata
+sudo riak-admin bucket-type update userdata \
+'{"props":{"search_index":"idx_userdata","allow_mult":false,"last_write_wins":true,"dvv_enabled":false}}'
+sudo riak-admin bucket-type activate userdata
 
 
-$ riak attach
+$ cd /usr/lib/riak/
+$ sudo cp ~/dex/engine/src/yz_dexyml_extractor.erl .
+$ sudo riak attach
 >
+c('yz_dexyml_extractor').
 yz_extractor:register("application/dexyml", yz_dexyml_extractor).
 yz_extractor:run(term_to_binary([]), yz_dexyml_extractor).
 
-$ cd dex
-$ iex -S mix
->
-Dex.put("kook", "foo", "bar")
-Dex.get("kook", "foo")
-Dex.search("user:kook", [])
 
+$ tail -f -n1000 /var/log/riak/console.log

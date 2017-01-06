@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<schema name="schema_userdata" version="1.5">
+<schema name="schema_userdata2" version="1.5">
 
  <fields>
 	<!-- All of these fields are required by Riak Search -->
@@ -14,11 +14,12 @@
 	<field name="_yz_err"  type="_yz_str" indexed="true" stored="false" multiValued="false"/>
 
 	<!-- other required fields here -->
-	<field name="bucket"   type="string" indexed="true" stored="false" multiValued="false" />
-	<field name="tags"	   type="string" indexed="true" stored="false" multiValued="true" />
-	<field name="created"  type="tlong"	 indexed="true" stored="true" multiValued="false" />
+	<field name="bucket"   type="string" indexed="true"  stored="false" multiValued="false" />
+	<field name="data"     type="string" indexed="false" stored="true"  multiValued="false" />
+	<field name="tags"	   type="string" indexed="true"  stored="false" multiValued="true" />
+	<field name="created"  type="tlong"	 indexed="true"  stored="true"  multiValued="false" />
 	<!-- <field name="datetime" type="dateRange" indexed="true" stored="true"  multiValued="false" /> -->
-	<field name="datetime" type="tdate" indexed="true" stored="false" multiValued="false" />
+	<!--<field name="datetime" type="tdate" indexed="true" stored="false" multiValued="false" /> -->
  </fields>
 
  <uniqueKey>_yz_id</uniqueKey>

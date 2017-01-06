@@ -28,8 +28,10 @@ defmodule Dex.Service.Plugins.App do
   end
 
   defp do_put state = %{user: user}, app_id, body do
-    res = case App.put user.id, app_id, body do
-      :ok -> "ok"
+    res = with \
+      %App{} <- App.parse!(user.id, body),
+      :ok <- App.put(user.id, app_id, body)
+    do "ok" else
       {:error, reason} -> to_string reason
     end
     {state, res}
@@ -44,8 +46,10 @@ defmodule Dex.Service.Plugins.App do
   end
  
   defp do_post state = %{user: user}, app_id, body do
-    res = case App.create user.id, app_id, body do
-      :ok -> "ok"
+    res = with \
+      %App{} <- App.parse!(user.id, body),
+      :ok <- App.create(user.id, app_id, body)
+    do "ok" else
       {:error, reason} -> to_string reason
     end
     {state, res}
