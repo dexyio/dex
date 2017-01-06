@@ -50,7 +50,7 @@ defmodule Dex.Service.Parsers.XML do
   @type annotations :: map
 
   @global_annots ~w(id title export tags use disable appdoc set)
-  @block_annots ~w(public protected private lang doc noparse cdata)
+  @block_annots ~w(public protected private lang doc noparse cdata text)
 
   @spec parse!(bitstring, bitstring) :: %Dex.Service.App{}
 
@@ -246,7 +246,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_annot_cdata state do
-    regex = ~R/((?:@cdata\s|@lang\s)[^<]*)<\s*([\w\.\-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
+    regex = ~R/((?:@text\s|@cdata\s|@lang\s)[^<]*)<\s*([\w\.\-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ \\5 ]]> </\\2>)
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}

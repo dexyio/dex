@@ -477,6 +477,11 @@ defmodule Dex.Service.Plugins.Core do
     %{state | mappy: map}
   end
 
+  def select state = %{args: args} do
+    res = args |> inspect
+    {state, res}
+  end
+
   @spec val(state) :: {state, term}
 
   def val state = %{args: [val], opts: opts} do
@@ -560,8 +565,12 @@ defmodule Dex.Service.Plugins.Core do
 
   @spec case(state) :: state
 
-  def case state = %{args: [_fn_true | rest]} do
-    cond_ %{state | args: rest}, true
+  def case state = %{args: [{fn_arg, _, _} | rest], mappy: map} do
+    map = case fn_arg.(state) do
+      [] -> map
+      [arg | _] -> Mappy.set map, "data", arg
+    end
+    cond_ %{state | mappy: map, args: rest}, true
   end
 
   @spec filter(state) :: {state, term}

@@ -192,6 +192,10 @@ defmodule Dex.KV.Adapters.Riak do
     pool &:riakc_pb_socket.create_search_index(&1, index, schema, opts)
   end
 
+  def set_search_index(bucket, index) do
+    pool &:riakc_pb_socket.set_search_index(&1, bucket, index)
+  end
+
   def put(bucket, key, val) do
     put(bucket, key, val, [])
   end
