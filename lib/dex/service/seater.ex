@@ -24,7 +24,7 @@ defmodule Dex.Service.Seater do
 
   def take_app user_id, app_id do
     with \
-      nil               <- Cache.get(@bucket, {user_id, app_id}),
+      nil               <- cached_app(user_id, app_id),
       {:ok, app}        <- App.get(user_id, app_id),
       :ok               <- check_app(app),
       {:ok, module}     <- alloc_app(app)
@@ -36,6 +36,10 @@ defmodule Dex.Service.Seater do
     end
   end
 
+  defp cached_app user_id, app_id do
+    Cache.get @bucket, {user_id, app_id || ""}
+  end
+
   @spec alloc_app(%App{}) :: {:ok, module} | {:error, term}
 
   def alloc_app app do
@@ -44,6 +48,7 @@ defmodule Dex.Service.Seater do
       {:ok, module}     <- compile_app(app, no),
       :ok               <- put_app(app, module)
     do
+      IO.inspect seat_no: no
       {:ok, module}
     else
       {:error, _reason} = err -> err

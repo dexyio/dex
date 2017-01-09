@@ -266,7 +266,7 @@ defmodule Dex.Service.App do
     File.read! file
   end
 
-  def get user_id, app_id do
+  def get(user_id, app_id) when is_bitstring(user_id) and is_bitstring(app_id) do
     key = key(user_id, app_id)
     case KV.get(@bucket, key) do
       {:ok, app} -> {:ok, app}
@@ -296,7 +296,8 @@ defmodule Dex.Service.App do
     end
   end
 
-  def put(user_id, app_id, body) do
+  def put(user_id, app_id, body) \
+  when is_bitstring(user_id) and is_bitstring(app_id) and is_bitstring(body) do
     app = parse! user_id, body
     app = %{app | id: app_id}
     KV.put @bucket, key(user_id, app_id), app

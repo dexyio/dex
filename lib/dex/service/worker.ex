@@ -86,7 +86,7 @@ defmodule Dex.Service.Worker do
     {user_id, app_id} =
       case req.app do
         app_id = "_" <> _ -> {"*", app_id}
-        app_id -> {req.user, app_id}
+        app_id -> {req.user, app_id || ""}
       end
     case Seater.take_app user_id, app_id do
       {:ok, {app, mod}} -> check_auth! %{state | app: app, mod: mod}
