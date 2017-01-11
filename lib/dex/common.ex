@@ -31,6 +31,10 @@ defmodule Dex.Common do
     end
   end
 
+  def md5(str) do
+    :crypto.hash(:sha256, str)
+  end
+
   def sha256(str) do
     :crypto.hash(:sha256, str)
   end

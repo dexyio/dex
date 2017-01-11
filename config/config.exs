@@ -69,7 +69,12 @@ config :dex, Dex.Cache.Adapters.ConCache,
   default_opts: [
     ttl: :timer.seconds(10),
     ttl_check: :timer.seconds(1),
-   touch_on_read: true
+    touch_on_read: true
+  ],
+  seater: [
+    ttl: :timer.seconds(3),
+    ttl_check: :timer.seconds(1),
+    touch_on_read: true
   ]
 
 config :dex, Dex.KV,
@@ -104,6 +109,7 @@ config :dex, Dex.Service.Seater,
 #   We are planning to automate this process.
 config :dex, Dex.Service.Plugins,
   core:   Dex.Service.Plugins.Core,
+  now:    Dex.Service.Plugins.Core,
   user:   Dex.Service.Plugins.User,
   app:    Dex.Service.Plugins.App,
   kv:     DexyPluginKV,
@@ -154,7 +160,7 @@ config :logger,
 
 config :logger, :console,
   level: :debug,
-  format: "$time $metadata[$level] $message\n",
+  format: "$time [$level] $metadata$message\n",
   metadata: [:module]
 
 

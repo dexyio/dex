@@ -5,6 +5,16 @@ defmodule Dex.Service.Seater do
   alias Dex.Cache
   alias Dex.Service.App
 
+  defmodule Seat do
+    defstruct no: 0,
+              used_time: 0
+
+    @type t :: %__MODULE__{
+      no: 0 | pos_integer,
+      used_time: 0 | pos_integer
+    }
+  end
+
   defmodule State do
     defstruct free_seats: [],
               used_seats: [] 

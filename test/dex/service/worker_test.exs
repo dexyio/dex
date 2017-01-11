@@ -84,15 +84,15 @@ defmodule Dex.Service.WorkerTest do
     ~S"""
       <data>
         | set "<data> \"hello\" </data>"
-        | use as: "myapp"
-        | apply "myapp.default"
+        | use as: "myapp2"
+        | apply "myapp2.default"
       </data>
     """ |> assert!("hello")
     ~S"""
       <data>
         | set "<data> \"hello\" </data>"
-        | use as: "myapp"
-        | apply "myapp.default"
+        | use as: "myapp3"
+        | apply "myapp3.default"
       </data>
     """ |> assert!("hello")
   end

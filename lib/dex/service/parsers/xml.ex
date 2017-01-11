@@ -223,18 +223,11 @@ defmodule Dex.Service.Parsers.XML do
     regex = ~R/(@lang\s+pipescript[\s\S]+?)<([\w\.\-]+)([^>]*?)>([\s\S]+?)<\/\2>/u
     res = Regex.replace regex, state.script, fn
       _match, f1, f2, f3, f4 ->
-        new_f4 = Regex.replace ~R/((?:\r?\n|^)\s*)([\w\.\-]+)/u, f4, fn
+        new_f4 = Regex.replace ~R/((?:\r?\n|^)\s*)([\w\.\-]+)(?=\s+\S+|\s*$)/u, f4, fn
           _match, f1, f2 -> f1 <> "| " <> f2
         end
         "#{f1}<#{f2}#{f3}>#{new_f4}</#{f2}>"
     end
-    %{state | script: res}
-  end
-
-  defp wrap_pipescript_with_do state do
-    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?):([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
-    replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
-    res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end
 
@@ -248,6 +241,13 @@ defmodule Dex.Service.Parsers.XML do
   defp wrap_annot_cdata state do
     regex = ~R/((?:@text\s|@cdata\s|@lang\s)[^<]*)<\s*([\w\.\-]+)((?::\w+)?)([^>]*)>(?!\s*<\!\[CDATA\[)([\s\S]+?)<\/\s*\2\3>/u
     replace_stmt = ~s(\\1<\\2\\4> <![CDATA[ \\5 ]]> </\\2>)
+    res = Regex.replace regex, state.script, replace_stmt
+    %{state | script: res}
+  end
+
+  defp wrap_pipescript_with_do state do
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?):([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
+    replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end

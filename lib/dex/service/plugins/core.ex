@@ -482,6 +482,10 @@ defmodule Dex.Service.Plugins.Core do
     {state, res}
   end
 
+  def secs state = %{args: []} do {state, Lib.now(:secs)} end
+  def msecs state = %{args: []} do {state, Lib.now(:msecs)} end
+  def usecs state = %{args: []} do {state, Lib.now(:usecs)} end
+
   @spec val(state) :: {state, term}
 
   def val state = %{args: [val], opts: opts} do
@@ -561,6 +565,12 @@ defmodule Dex.Service.Plugins.Core do
 
   def unless_ state do
     cond_ state, false
+  end
+
+  @spec unique(state) :: state
+
+  def unique state = %{args: []} do
+    {state, Lib.unique}
   end
 
   @spec case(state) :: state

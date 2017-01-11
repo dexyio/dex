@@ -1,12 +1,14 @@
 $ iex
 
 >
+schema = "schema_userdata4"
+index = "idx_userdata"
 pid = :pooler.take_group_member(:riak)
 xml = File.read! "priv/schemas/schema_userdata.xml"
-:riakc_pb_socket.create_search_schema(pid, "schema_userdata3", xml)
-:riakc_pb_socket.delete_search_index(pid, "idx_userdata")
+:riakc_pb_socket.create_search_schema(pid, schema, xml)
+:riakc_pb_socket.delete_search_index(pid, index)
 
-:riakc_pb_socket.create_search_index(pid, "idx_userdata", "schema_userdata3", [])
+:riakc_pb_socket.create_search_index(pid, index, schema, [])
 :pooler.return_group_member(:riak, pid, :ok)
 
 
