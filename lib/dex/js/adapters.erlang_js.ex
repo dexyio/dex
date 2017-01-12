@@ -5,7 +5,6 @@ defmodule Dex.JS.Adapters.ErlangJS do
   end
 
   use GenServer
-  use Dex
   use Dex.Common
 
   @type reason :: atom

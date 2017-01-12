@@ -4,6 +4,7 @@ defmodule Dex.Common do
 
   defmacro __using__(_opts) do
     quote do
+      use Dex
       use Dex.Error
       use DexyLib
       alias DexyLib, as: Lib

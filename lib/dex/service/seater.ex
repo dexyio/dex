@@ -4,6 +4,7 @@ defmodule Dex.Service.Seater do
   use Dex.Common
   alias Dex.Cache
   alias Dex.Service.App
+  require Logger
 
   defmodule Seat do
     defstruct no: 0,
@@ -58,7 +59,7 @@ defmodule Dex.Service.Seater do
       {:ok, module}     <- compile_app(app, no),
       :ok               <- put_app(app, module)
     do
-      IO.inspect seat_no: no
+      Logger.debug "allocated_seat=#{no}"
       {:ok, module}
     else
       {:error, _reason} = err -> err

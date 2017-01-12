@@ -1,6 +1,6 @@
 defmodule Dex.Error do
 
-  import Dex
+  use DexyLib
 
   defmacro __using__(_opts) do
     quote do

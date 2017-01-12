@@ -12,18 +12,6 @@ defmodule Dex do
     end
   end # defmacro
 
-  defmacro deferror name, code \\ nil do
-    quote do
-      defmodule unquote(name) do
-        defexception message: to_string(unquote name)
-                              |> String.split(".") |> List.last,
-                     code: unquote(code),
-                     reason: nil,
-                     state: nil
-      end
-    end
-  end
-
   defmacro app, do: :dex
 
   def start(_type, _args) do
