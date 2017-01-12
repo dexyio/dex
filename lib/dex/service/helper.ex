@@ -5,6 +5,13 @@ defmodule Dex.Service.Helper do
   alias DexyLib.JSON
   alias Dex.Service.Seater
   alias Dex.Service.App
+  require Logger
+
+  @max_depth_default 1000
+  @max_depth Application.get_env(Dex.app, :max_function_depth) || (
+    Logger.warn("max_function_depth not configured, default: #{@max_depth_default}"); 
+    @max_depth_default
+  )
 
   defmacro __using__(_) do
     quote do
@@ -64,8 +71,6 @@ defmodule Dex.Service.Helper do
     raise Error.RuntimeError, reason: error, state: state
   end
 
-  @max_depth 100_000
-
   defp check state do
     state |> do_check(:depth)
   end
@@ -91,7 +96,7 @@ defmodule Dex.Service.Helper do
 
   defmacro val! str, state do
     inspected = Mappy.parse_var! str
-    quote do: Mappy.val(unquote(state).mappy, unquote(inspected), nil)
+    quote do: Mappy.val(unquote(state).mappy, unquote(inspected))
   end
 
   _ = ~S"""

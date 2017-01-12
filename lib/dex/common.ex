@@ -6,8 +6,7 @@ defmodule Dex.Common do
     quote do
       use Dex
       use Dex.Error
-      use DexyLib
-      alias DexyLib, as: Lib
+      use DexyLib, as: Lib
       require Dex.Service.Code, as: Code
       import unquote(__MODULE__)
       

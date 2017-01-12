@@ -198,6 +198,7 @@ defmodule Dex.Service.Plugins.Core do
   defp do_to_string(state, data) when is_bitstring(data) do state end
   defp do_to_string(state, data) when is_number(data) do {state, Kernel.to_string data} end
   defp do_to_string(state, data) when is_tuple(data) do {state, inspect data} end
+  defp do_to_string(state, data = %DateTime{}) do {state, DateTime.to_string data} end
   defp do_to_string(state, data) do
     case JSON.encode data do
       {:ok, val} -> {state, val}
@@ -212,9 +213,27 @@ defmodule Dex.Service.Plugins.Core do
 
   defp do_to_map(state, nil) do {state, %{}} end
   defp do_to_map(state, {key, val}) do {state, %{key => val}} end
+  defp do_to_map(state, data = %DateTime{}) do {state, datetime_to_map data} end
   defp do_to_map(state, data) when is_list(data) do
     map = for {key, val} <- data, into: %{}, do: {key, val}
     {state, map}
+  end
+
+  defp datetime_to_map datetime do
+    %{
+      "calendar" => datetime.calendar,
+      "time_zone" => datetime.time_zone,
+      "zone_abbr" => datetime.zone_abbr,
+      "year" => datetime.year,
+      "month" => datetime.month,
+      "day" => datetime.day,
+      "hour" => datetime.hour,
+      "minute" => datetime.minute,
+      "second" => datetime.second,
+      "microsecond" => datetime.microsecond |> elem(0),
+      "std_offset" => datetime.std_offset,
+      "utc_offset" => datetime.utc_offset
+    }
   end
 
   @spec is_nil_(state) :: {state, boolean}
@@ -315,6 +334,14 @@ defmodule Dex.Service.Plugins.Core do
   defp do_is_regex state, data do
     {state, Regex.regex? data}
   end
+
+  @spec is_datetime(state) :: {state, boolean}
+
+  def is_datetime state = %{args: []} do do_is_datetime state, data! state end
+  def is_datetime state = %{args: [data]} do do_is_datetime state, data end
+
+  defp do_is_datetime state, %DateTime{} do {state, true} end
+  defp do_is_datetime state, _ do {state, false} end
 
   @spec join(state) :: {state, term}
 
@@ -501,7 +528,8 @@ defmodule Dex.Service.Plugins.Core do
   def assert state = %{mappy: map, args: [], opts: opts} do
     case do_assert(opts |> Map.to_list, map) do
       true -> state
-      {left, right} -> raise Error.AssertionFailed, reason: [left, right], state: state
+      {left, right} ->
+        raise Error.AssertionFailed, reason: [left, right], state: state
     end
   end
 
