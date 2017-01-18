@@ -29,7 +29,7 @@ defmodule Dex.Service.Vnode do
     Logger.debug("got a request! => #{inspect req}")
     res = with \
       :undefined <- :gproc.lookup_local_name(user_id),
-      user = %User{} <- get_user!(user_id),
+      user = %User{} <- get_user(user_id),
       {:ok, pid} <- Bot.new(user),
       :ok <- store_bot(part, user_id)
     do
@@ -91,7 +91,7 @@ defmodule Dex.Service.Vnode do
     Dex.KV.put bucket, key, user_name
   end
 
-  defp get_user! user_id do
+  defp get_user user_id do
     case User.get(user_id) do
       {:ok, user} ->
         user.enabled && user || {:error, :user_disabled}

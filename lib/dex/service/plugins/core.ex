@@ -343,6 +343,15 @@ defmodule Dex.Service.Plugins.Core do
   defp do_is_datetime state, %DateTime{} do {state, true} end
   defp do_is_datetime state, _ do {state, false} end
 
+  @spec into(state) :: {state, term}
+
+  def into state = %{args: [var]} do do_into state, var end
+
+  defp do_into(state, var) when is_bitstring(var) do
+    map = Mappy.set state.mappy, var, data!(state)
+    %{state | mappy: map}
+  end
+
   @spec join(state) :: {state, term}
 
   def join state = %{args: []} do do_join state, data!(state), "" end
@@ -504,14 +513,84 @@ defmodule Dex.Service.Plugins.Core do
     %{state | mappy: map}
   end
 
-  def select state = %{args: args} do
-    res = args |> inspect
-    {state, res}
-  end
-
   def secs state = %{args: []} do {state, Lib.now(:secs)} end
   def msecs state = %{args: []} do {state, Lib.now(:msecs)} end
   def usecs state = %{args: []} do {state, Lib.now(:usecs)} end
+
+  @spec sleep(state) :: {state, term}
+
+  def sleep state = %{args: []} do do_sleep state, data! state end
+  def sleep state = %{args: [msecs]} do do_sleep state, msecs end
+
+  defp do_sleep(state, msecs) when msecs > 0 and msecs <= 60_000 do
+    Process.sleep msecs
+    state
+  end
+
+
+  @spec slice(state) :: {state, term}
+
+  def slice state = %{args: args = [_]} do do_slice state, args end
+  def slice state = %{args: args = [_, _]} do do_slice state, args end
+  def slice state = %{args: args = [_, _, _]} do do_slice state, args end
+
+  defp do_slice state, [range = _.._] do
+    res = Lib.slice data!(state), range
+    {state, res}
+  end
+
+  defp do_slice state, [data, range = _.._] do
+    res = Lib.slice data, range
+    {state, res}
+  end
+
+  defp do_slice(state, [at, cnt]) when is_number(at) and is_number(cnt) do
+    res = Lib.slice data!(state), at, cnt
+    {state, res}
+  end
+
+  defp do_slice(state, [data, at, cnt]) when is_number(at) and is_number(cnt) do
+    res = Lib.slice data, at, cnt
+    {state, res}
+  end
+
+  @spec sum(state) :: {state, term}
+
+  def sum state = %{args: []} do do_sum state, data!(state) end
+  def sum state = %{args: [data]} do do_sum state, data end
+
+  defp do_sum(state, data = _.._) do {state, Enum.sum data} end
+  defp do_sum(state, data) when is_list(data) do {state, Enum.sum data} end
+
+  @spec split(state) :: {state, term}
+
+  def split state = %{args: [], opts: opts} do
+    do_split state, data!(state), ~r/\s+/, opts
+  end
+
+  def split state = %{args: [token], opts: opts} do
+    do_split state, data!(state), token, opts
+  end
+
+  def split state = %{args: [data, token], opts: opts} do
+    do_split state, data, token, opts
+  end
+
+  defp do_split(state, data, token, opts) when is_bitstring(data) do
+    opts = (parts = opts["parts"]) && [parts: parts] || []
+    {state, String.split(data, token, opts)}
+  end
+
+  defp do_split(state, data, count, _opts) when is_map(data) or is_list(data) do
+    is_number(count) || raise Error.InvalidArgument, state: state
+    {state, Enum.split(data, count)}
+  end
+
+  @spec stop(state) :: Dex.Error.Stopped
+
+  def stop state do
+    raise Error.Stopped, state: state
+  end
 
   @spec val(state) :: {state, term}
 
@@ -686,30 +765,6 @@ defmodule Dex.Service.Plugins.Core do
     do_for state, (data |> String.codepoints)
   end
 
-  @spec split(state) :: {state, term}
-
-  def split state = %{args: [], opts: opts} do
-    do_split state, data!(state), ~r/\s+/, opts
-  end
-
-  def split state = %{args: [token], opts: opts} do
-    do_split state, data!(state), token, opts
-  end
-
-  def split state = %{args: [data, token], opts: opts} do
-    do_split state, data, token, opts
-  end
-
-  defp do_split(state, data, token, opts) when is_bitstring(data) do
-    opts = (parts = opts["parts"]) && [parts: parts] || []
-    {state, String.split(data, token, opts)}
-  end
-
-  defp do_split(state, data, count, _opts) when is_map(data) or is_list(data) do
-    is_number(count) || raise Error.InvalidArgument, state: state
-    {state, Enum.split(data, count)}
-  end
-
   @spec lines(state) :: {state, list}
 
   def lines(state = %{args: [], opts: opts}) do
@@ -733,12 +788,6 @@ defmodule Dex.Service.Plugins.Core do
   def count state = %{args: []} do {state, Lib.count data!(state)} end
   def count state = %{args: [data]} do {state, Lib.count data} end
 
-  @spec stop(state) :: Dex.Error.Stopped
-
-  def stop state do
-    raise Error.Stopped, state: state
-  end
-
   def use state = %{args: [], opts: opts} do do_use state, data!(state), opts end
   def use state = %{args: [data], opts: opts} do do_use state, data, opts end
 
@@ -756,9 +805,9 @@ defmodule Dex.Service.Plugins.Core do
     state
   end
 
-  defp do_use(state = %{req: req}, data, %{"as" => as}) \
+  defp do_use(state = %{req: req, user: user}, data, %{"as" => as}) \
   when is_bitstring(data) and is_bitstring(as) do
-    new_app = App.parse! req.user, (Lib.ltrim data)
+    new_app = App.parse! user.id, (Lib.ltrim data)
     new_app = %{new_app | id: req.app <> ":" <> as}
     case Seater.alloc_app new_app do
       {:ok, _module} ->
@@ -773,7 +822,7 @@ defmodule Dex.Service.Plugins.Core do
   def apply state = %{args: [], opts: opts} do do_apply state, data!(state), opts end
   def apply state = %{args: [data], opts: opts} do do_apply state, data, opts end
 
-  defp do_apply(state = %{req: req}, data, opts) when is_bitstring(data) do
+  defp do_apply(state = %{user: user}, data, opts) when is_bitstring(data) do
     apply_args = opts["args"] || []
     apply_opts = opts["opts"] || %{}
     {app, fun} = data |> String.split(".", parts: 2)
@@ -784,7 +833,7 @@ defmodule Dex.Service.Plugins.Core do
         [app, fun] -> {app, fun}
       end
     %{state | args: apply_args, opts: apply_opts}
-      |> do!({req.user, app, fun})
+      |> do!({user.id, app, fun})
   end
 
   def length state = %{args: []} do do_length state, data! state end
@@ -866,36 +915,6 @@ defmodule Dex.Service.Plugins.Core do
   def do_bytes(state, data) when is_bitstring(data) do
     {state, Lib.bytes data}
   end
-
-  def slice state = %{args: args = [_]} do do_slice state, args end
-  def slice state = %{args: args = [_, _]} do do_slice state, args end
-  def slice state = %{args: args = [_, _, _]} do do_slice state, args end
-
-  defp do_slice state, [range = _.._] do
-    res = Lib.slice data!(state), range
-    {state, res}
-  end
-
-  defp do_slice state, [data, range = _.._] do
-    res = Lib.slice data, range
-    {state, res}
-  end
-
-  defp do_slice(state, [at, cnt]) when is_number(at) and is_number(cnt) do
-    res = Lib.slice data!(state), at, cnt
-    {state, res}
-  end
-
-  defp do_slice(state, [data, at, cnt]) when is_number(at) and is_number(cnt) do
-    res = Lib.slice data, at, cnt
-    {state, res}
-  end
-
-  def sum state = %{args: []} do do_sum state, data!(state) end
-  def sum state = %{args: [data]} do do_sum state, data end
-
-  defp do_sum(state, data = _.._) do {state, Enum.sum data} end
-  defp do_sum(state, data) when is_list(data) do {state, Enum.sum data} end
 
   def reverse state = %{args: []} do do_reverse state, data!(state) end
   def reverse state = %{args: [data]} do do_reverse state, data end
