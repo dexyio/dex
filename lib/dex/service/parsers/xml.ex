@@ -246,8 +246,8 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp wrap_pipescript_with_do state do
-    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+[\s\S]+?):([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
-    replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2\\4 ]]> </do>"
+    regex = ~R/(<\s*(?!do|fn)[^>]*>\s*?)(\|\s+\S+?):([0-9]+)([\s\S]*?)(?=\n\s*@\w+\s+|\n\s*<\/?[\w\.\-]+)/u
+    replace_stmt = "\\1 <do _line='\\3'> <![CDATA[ \\2:\\3\\4 ]]> </do>"
     res = Regex.replace regex, state.script, replace_stmt
     %{state | script: res}
   end

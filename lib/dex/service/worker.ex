@@ -65,12 +65,12 @@ defmodule Dex.Service.Worker do
       ex in Error.Stopped -> 
         reply! ex.state
       ex ->
-        #IO.inspect ex
-        #IO.inspect System.stacktrace
+        IO.inspect ex
+        IO.inspect System.stacktrace
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{
-          error: ex_map[:message] || "RuntimeError",
+          error: "RuntimeError",
           code: ex_map[:code] || Code.bad_request,
           message: (if ex_map[:state], do: ex.reason, else: inspect ex),
           line: state2[:line], 

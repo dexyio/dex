@@ -10,7 +10,7 @@ defmodule Dex.Service.Plugins.HTTPTest do
   test "on_call" do
     ~S"""
     @dexyml
-    | http.get "www.example.com"
+    | http.get "http://www.example.com"
     | set data.code
     """ |> assert!(200)
   end

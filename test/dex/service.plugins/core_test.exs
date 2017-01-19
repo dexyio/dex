@@ -258,6 +258,12 @@ defmodule Dex.Service.Plugins.CoreTest do
     ~S"""
     @dexyml
     | set var: "name"
+    | set my[var]: "foo"
+    | set my.name
+    """ |> assert!("foo")
+    ~S"""
+    @dexyml
+    | set var: "name"
     | set my[var2]: "foo"
     | set my.name
     """ |> assert!(nil)

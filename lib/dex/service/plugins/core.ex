@@ -692,6 +692,7 @@ defmodule Dex.Service.Plugins.Core do
 
   @spec filter(state) :: {state, term}
 
+  def filter(state = %{args: []}) do do_filter state, data! state end
   def filter(state = %{args: [{fn_args, _fn_opts, fn_do}]}) \
     when is_function(fn_args) 
   do
@@ -701,6 +702,28 @@ defmodule Dex.Service.Plugins.Core do
 
   defp filter state, [], fn_do do do_filter state, data!(state), fn_do end
   defp filter state, [data], fn_do do do_filter state, data, fn_do end
+
+  defp do_filter(state, _.._) do do_filter(state, :error) end
+
+  defp do_filter(state, data) when is_list(data) do
+    res = Enum.filter data, &(&1)
+    {state, res}
+  end
+
+  defp do_filter(state, data) when is_map(data) do
+    res = for {k, v} <- data, v, into: %{}, do: {k, v}
+    {state, res}
+  end
+
+  defp do_filter(state, data) when is_tuple(data) do
+    res = Tuple.to_list(data) |> Enum.filter(& &1) |> List.to_tuple
+    {state, res}
+  end
+
+  defp do_filter(state, data) when is_bitstring(data) do
+    res = String.replace(data, " ", "")
+    {state, res}
+  end
 
   defp do_filter(state, data, fn_do) when is_list(data) or is_map(data) do
     res = Enum.filter data, fn x ->
