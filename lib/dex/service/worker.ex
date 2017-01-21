@@ -65,8 +65,8 @@ defmodule Dex.Service.Worker do
       ex in Error.Stopped -> 
         reply! ex.state
       ex ->
-        IO.inspect ex
-        IO.inspect System.stacktrace
+        #IO.inspect ex
+        #IO.inspect System.stacktrace
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{

@@ -1,12 +1,15 @@
 defmodule Dex.Service.Bot do
 
+  defmodule Supervisor do
+    use DexyLib.Supervisor, otp_app: :dex
+  end
+
   defmodule State do
     defstruct name: nil,
               user: nil
   end
 
   use GenServer
-  use Dex.Sup
   use Dex.Common
   alias Dex.Service.Worker
 
@@ -15,7 +18,7 @@ defmodule Dex.Service.Bot do
   @spec new(Proplists.t) :: {:ok, pid} | {:error, term}
 
   def new user do
-    start_child(:worker, __MODULE__, [[user: user]], id: user.id)
+    Supervisor.start_child(:worker, __MODULE__, [[user: user]], id: user.id)
   end
 
   def start_link args do

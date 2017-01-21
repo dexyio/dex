@@ -2,7 +2,6 @@ defmodule Dex do
 
   use Application
   use DexyLib
-  use Dex.Sup
   require Dex.JS
 
   defstruct map: %{}, js: nil
@@ -14,8 +13,12 @@ defmodule Dex do
 
   defmacro app, do: :dex
 
+  defmodule Supervisor do
+    use DexyLib.Supervisor, otp_app: :dex
+  end
+
   def start(_type, _args) do
-    {:ok, pid} = start_sup
+    {:ok, pid} = Supervisor.start_link
     start_riak
     {:ok, pid}
   end
@@ -27,15 +30,6 @@ defmodule Dex do
         :ok = :riak_core.register([{:vnode_module, Dex.Service.Vnode}]) 
         :ok = :riak_core_node_watcher.service_up(Dex.Service, self())
     end
-  end
-
-  def _start_sup do
-    import Elixir.Supervisor.Spec, warn: false
-    children = [
-      supervisor(:pooler_sup, [])
-    ]
-    opts = [strategy: :one_for_one, name: Dex.Supervisor]
-    Elixir.Supervisor.start_link(children, opts)
   end
 
 end

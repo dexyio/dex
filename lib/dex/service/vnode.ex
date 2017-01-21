@@ -86,6 +86,7 @@ defmodule Dex.Service.Vnode do
   end
 
   # Private functions
+
   defp store_bot partition, user_name do
     key = {:partition, partition} |> DexyLib.to_binary
     Dex.KV.put bucket, key, user_name
