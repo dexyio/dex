@@ -48,7 +48,7 @@ defmodule Dex.JS.Adapters.ErlangJS do
   # Server (callbacks)
 
   def init(_) do
-    {:ok, js} = new
+    {:ok, js} = new()
     :ok = load_libs(js)
     :ok = register_functions(js)
     {:ok, %State{js: js}}
@@ -103,10 +103,10 @@ defmodule Dex.JS.Adapters.ErlangJS do
   end
 
   defp load_libs(js) do
-    js_path = priv_dir <> "/js/"
+    js_path = priv_dir() <> "/js/"
     (conf(Dex.JS)[:libs] || [])
       |> Enum.each(
-        &(:ok = do_load_libs js, js_path <> &1)
+        &(:ok = do_load_libs(js, js_path) <> &1)
       )
   end
 

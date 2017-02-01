@@ -11,11 +11,11 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def init_search do
-    create_search_schemes
-    create_search_indices
-    create_bucket_types
-    activate_bucket_types
-    check_all_conf
+    create_search_schemes()
+    create_search_indices()
+    create_bucket_types()
+    activate_bucket_types()
+    check_all_conf()
     IO.puts ~S"""
 
     == YOU MUST APPLY CUSTOM EXTRACTORS FOR RIAK SEARCH ==
@@ -28,13 +28,13 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def check_all_conf do
-    IO.puts "check_search_schemes: #{inspect check_search_schemes}"
-    IO.puts "check_search_indices: #{inspect check_search_indices}"
-    IO.puts "check_bucket_types: #{inspect check_bucket_types}"
+    IO.puts "check_search_schemes: #{inspect check_search_schemes()}"
+    IO.puts "check_search_indices: #{inspect check_search_indices()}"
+    IO.puts "check_bucket_types: #{inspect check_bucket_types()}"
   end
 
   def check_search_schemes do
-    for {schema, props} <- conf_search_schemes do
+    for {schema, props} <- conf_search_schemes() do
       xml = File.read! props[:file]
       case get_search_schema(schema) do
         {:ok, ^xml} -> {schema, :ok}
@@ -44,7 +44,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def check_search_indices() do
-    for {index, props} <- conf_search_indices do
+    for {index, props} <- conf_search_indices() do
       res = case get_search_index(index) do
         {:ok, props2} ->
           same_props?(props, props2, :schema) ||
@@ -64,13 +64,13 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def create_bucket_types do
-    for {type, props} <- conf_bucket_types do
+    for {type, props} <- conf_bucket_types() do
       create_bucket_type(type, props)
     end
   end
 
   def update_bucket_types do
-    for {type, props} <- conf_bucket_types do
+    for {type, props} <- conf_bucket_types() do
       update_bucket_type(type, props)
     end
   end
@@ -94,7 +94,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def activate_bucket_types do
-    for {type, _} <- conf_bucket_types do
+    for {type, _} <- conf_bucket_types() do
       activate_bucket_type(type)
     end
   end
@@ -114,7 +114,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def check_bucket_types() do
-    for {type, props} <- conf_bucket_types do
+    for {type, props} <- conf_bucket_types() do
       res = case get_bucket_type(type) do
         {:ok, props2} ->
           for {k, v} <- props do
@@ -154,12 +154,12 @@ defmodule Dex.KV.Adapters.Riak do
     pool &:riakc_pb_socket.get_bucket_type(&1, type)
   end
 
-  def conf_search_schemes, do: conf[:search_schemes]
-  def conf_search_indices, do: conf[:search_indices]
-  def conf_bucket_types, do: conf[:bucket_types]
+  def conf_search_schemes, do: conf()[:search_schemes]
+  def conf_search_indices, do: conf()[:search_indices]
+  def conf_bucket_types, do: conf()[:bucket_types]
 
   def create_search_schemes do
-    for {schema, props} <- conf_search_schemes do
+    for {schema, props} <- conf_search_schemes() do
       xml = File.read! props[:file]
       res = create_search_schema(schema, xml)
       {schema, res}
@@ -171,7 +171,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def create_search_indices do
-    for {index, props} <- conf_search_indices do
+    for {index, props} <- conf_search_indices() do
       schema = props[:schema] || throw {:error, "index #{index}'s schema: nil"}
       case get_search_schema(schema) do
         {:ok, _props} -> 
@@ -260,7 +260,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   defp pool(fun) do
-    pid = take_member
+    pid = take_member()
     res = fun.(pid)
     return_member pid
     res

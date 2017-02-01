@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<schema name="schema_userdata2" version="1.5">
+<schema name="schema_userdata4" version="1.5">
 
  <fields>
 	<!-- All of these fields are required by Riak Search -->
@@ -14,12 +14,18 @@
 	<field name="_yz_err"  type="_yz_str" indexed="true" stored="false" multiValued="false"/>
 
 	<!-- other required fields here -->
-	<field name="bucket"   type="string" indexed="true"  stored="false" multiValued="false" />
-	<field name="data"     type="string" indexed="false" stored="true"  multiValued="false" />
+	<field name="bucket"   type="string" indexed="true"  stored="true"  multiValued="false" />
+	<field name="key"      type="string" indexed="true"  stored="true"  multiValued="false" />
 	<field name="tags"	   type="string" indexed="true"  stored="false" multiValued="true" />
 	<field name="created"  type="tlong"	 indexed="true"  stored="true"  multiValued="false" />
-	<!-- <field name="datetime" type="dateRange" indexed="true" stored="true"  multiValued="false" /> -->
-	<!--<field name="datetime" type="tdate" indexed="true" stored="false" multiValued="false" /> -->
+	<field name="idx_int"  type="tint"	 indexed="true"  stored="false" multiValued="false" />
+	<field name="idx_long" type="tlong"	 indexed="true"  stored="false" multiValued="false" />
+	<field name="idx_float" type="tfloat"	indexed="true"  stored="false" multiValued="false" />
+	<field name="idx_double" type="tdouble"	indexed="true"  stored="false" multiValued="false" />
+	<field name="idx_string" type="string"	indexed="true"  stored="false"  multiValued="false" />
+	<!--<field name="idx_date" type="tdate" indexed="true" stored="false" multiValued="false" />-->
+	<!--<field name="value"    type="binary" indexed="false" stored="true"  multiValued="false" />-->
+	<!--<field name="datetime" type="dateRange" indexed="true" stored="true"  multiValued="false" />-->
  </fields>
 
  <uniqueKey>_yz_id</uniqueKey>
@@ -31,8 +37,10 @@
     <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
 	<fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
 	<fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
-	<!-- <fieldType name="dateRange" class="solr.DateRangeField" precisionStep="8" positionIncrementGap="0"/> -->
+	<fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
+	<fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
 	<fieldType name="tdate" class="solr.TrieDateField" precisionStep="8" positionIncrementGap="0"/>
+	<!-- <fieldType name="dateRange" class="solr.DateRangeField" precisionStep="8" positionIncrementGap="0"/> -->
  </types>
 
 </schema>

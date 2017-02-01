@@ -55,7 +55,7 @@ defmodule Dex.Service.Seater do
 
   def alloc_app app do
     with \
-      {:ok, no}         <- take_seat,
+      {:ok, no}         <- take_seat(),
       {:ok, module}     <- compile_app(app, no),
       :ok               <- put_app(app, module)
     do
@@ -113,7 +113,7 @@ defmodule Dex.Service.Seater do
   end
 
   defp module_name seat_no do
-    "#{predef_module_name}#{seat_no}" |> String.to_existing_atom
+    "#{predef_module_name()}#{seat_no}" |> String.to_existing_atom
   end
 
   defp put_app app, module do
@@ -121,8 +121,8 @@ defmodule Dex.Service.Seater do
   end
 
   defp reserve_module_names do
-    1..conf[:total_seats]
-      |> Enum.each(& String.to_atom "#{predef_module_name}#{&1}")
+    1..conf()[:total_seats]
+      |> Enum.each(& String.to_atom "#{predef_module_name()}#{&1}")
   end
 
   defp init_cache _state do
@@ -130,7 +130,7 @@ defmodule Dex.Service.Seater do
   end
 
   defp init_seats state do
-    max = conf[:total_seats]
+    max = conf()[:total_seats]
     seats = (1..max) |> Enum.to_list
     {:ok, %{state | free_seats: seats}}
   end
@@ -145,7 +145,7 @@ defmodule Dex.Service.Seater do
 
   def start_link opts \\ [] do
     with state = %State{},
-      :ok <- reserve_module_names,
+      :ok <- reserve_module_names(),
       :ok <- init_cache(state),
       {:ok, state} <- init_seats(state)
     do
