@@ -133,7 +133,8 @@ config :dexy_lib, DexyLib.JSON,
 config :dexy_plugin_json, DexyPluginJson, []
 
 config :dexy_plugin_json, DexyPluginHTTP,
-  adapter: DexyPluginHTTP.Adapters.HTTPoison
+  #adapter: DexyPluginHTTP.Adapters.HTTPoison
+  adapter: DexyPluginHTTP.Adapters.Gun
 
 config :dexy_plugin_kv, DexyPluginKV,
   adapter: DexyPluginKV.Adapters.Riak
@@ -181,12 +182,6 @@ config :pooler, :pools, [
     init_count: 10,
     start_mfa: {Dex.KV, :start_link, []}
   ], [
-    name: Dex.JS,
-    group: :js,
-    max_count: 100,
-    init_count: 10,
-    start_mfa: {Dex.JS, :start_link, []}
-  ], [
     name: DexyPluginKV.Adapters.Riak,
     group: :riak,
     max_count: 100,
@@ -195,7 +190,15 @@ config :pooler, :pools, [
   ]
 ]
 
-config :pooler, :backup, []
+config :pooler, :pools_backup, [
+  [
+    name: Dex.JS,
+    group: :js,
+    max_count: 100,
+    init_count: 10,
+    start_mfa: {Dex.JS, :start_link, []}
+  ]
+]
 
 #
 # Riak Core
