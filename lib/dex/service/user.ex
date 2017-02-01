@@ -25,7 +25,6 @@ defmodule Dex.Service.User do
   }
 
   @bucket :erlang.term_to_binary(__MODULE__)
-  @new_flags for <<flag <- "11111111">>, into: <<>>, do: <<flag::1>>
 
   use Dex.Common
   use Timex

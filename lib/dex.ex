@@ -19,7 +19,7 @@ defmodule Dex do
 
   def start(_type, _args) do
     {:ok, pid} = Supervisor.start_link
-    start_riak
+    start_riak()
     {:ok, pid}
   end
 

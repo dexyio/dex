@@ -47,7 +47,7 @@ defmodule Dex.Cache.Adapters.ConCache do
       do: ConCache.dirty_get_or_store(bucket, key, fun)
 
   defp new_child bucket, opts \\ nil do
-    opts = opts || conf[bucket] || conf[:default_opts] || []
+    opts = opts || conf()[bucket] || conf()[:default_opts] || []
     args = [opts, [name: bucket]]
     Supervisor.start_child(:worker, ConCache, args, id: bucket)
   end

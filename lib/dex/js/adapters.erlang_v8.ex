@@ -45,7 +45,7 @@ defmodule Dex.JS.Adapters.ErlangV8 do
   # Callbacks
 
   def init(_) do
-    {:ok, %State{js: new}}
+    {:ok, %State{js: new()}}
   end
 
   def handle_call {:eval, context, str, timeout}, _from, state do
@@ -94,7 +94,7 @@ defmodule Dex.JS.Adapters.ErlangV8 do
   # Private functions
 
   defp new do
-    {:ok, vm} = common_libs
+    {:ok, vm} = common_libs()
       |> Enum.map(& {:file, &1})
       |> :erlang_v8.start_vm
     vm
@@ -105,7 +105,7 @@ defmodule Dex.JS.Adapters.ErlangV8 do
   end
 
   defp common_libs do
-    js_path = priv_dir <> "/js/"
+    js_path = priv_dir() <> "/js/"
     (conf(Dex.JS)[:libs] || [])
       |> Enum.map(&String.to_charlist(js_path <> &1))
   end

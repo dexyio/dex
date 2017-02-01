@@ -8,13 +8,13 @@ defmodule Dex.Test do
     def id, do: "foo"
 
     def user, do: %Dex.Service.User{
-      id: id, 
-      __secret: sha256(id <> ":" <> id),
+      id: id(), 
+      __secret: sha256(id() <> ":" <> id()),
       enabled: true
     }
 
     def request, do: %Dex.Service.Request{
-      user: id,
+      user: id(),
       app: "test",
       fun: "GET",
       args: ["arg1", 2, 3..10],
@@ -26,7 +26,7 @@ defmodule Dex.Test do
 
     def request_props app, fun, args \\ [], opts \\ %{} do
       [
-        user: id,
+        user: id(),
         app: app,
         fun: fun,
         args: args,
@@ -35,7 +35,7 @@ defmodule Dex.Test do
           "authorization" => ~s/Basic #{Base.encode64("foo:foo")}/,
         },
         body: "",
-        callback: self
+        callback: self()
       ]
     end
 

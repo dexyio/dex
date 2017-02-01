@@ -26,7 +26,7 @@ defmodule Dex.Service.Vnode do
   end
 
   def handle_command req = %Request{user: user_id}, _from, state = %{partition: part} do
-    Logger.debug("got a request! => #{inspect req}")
+    #Logger.debug("got a request! => #{inspect req}")
     res = with \
       :undefined <- :gproc.lookup_local_name(user_id),
       user = %User{} <- get_user(user_id),
@@ -89,7 +89,7 @@ defmodule Dex.Service.Vnode do
 
   defp store_bot partition, user_name do
     key = {:partition, partition} |> DexyLib.to_binary
-    Dex.KV.put bucket, key, user_name
+    Dex.KV.put bucket(), key, user_name
   end
 
   defp get_user user_id do
