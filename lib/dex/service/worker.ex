@@ -16,7 +16,7 @@ defmodule Dex.Service.Worker do
   @spec start_link(Proplists.t) :: {:ok, pid} | {:error, term}
 
   def start_link(args \\ []) do
-    GenServer.start_link(__MODULE__, new_state, args)
+    GenServer.start_link(__MODULE__, new_state(), args)
   end
 
   @spec new_state() :: %Dex.Service.State{}
@@ -24,7 +24,7 @@ defmodule Dex.Service.Worker do
   def new_state do
     %Dex.Service.State{
       mappy: Mappy.new,
-      js: Dex.JS.take_handle
+      js: nil#Dex.JS.take_handle
     }
   end
 
@@ -70,7 +70,7 @@ defmodule Dex.Service.Worker do
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{
-          error: "RuntimeError",
+          error: ex_map[:message] || "RuntimeError",
           code: ex_map[:code] || Code.bad_request,
           message: (if ex_map[:state], do: ex.reason, else: inspect ex),
           line: state2[:line], 
@@ -145,7 +145,8 @@ defmodule Dex.Service.Worker do
   end
 
   def terminate(_reason, state) do
-    Dex.JS.return_handle state.js
+    #Dex.JS.return_handle state.js
+    :ok
   end
 
 end

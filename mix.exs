@@ -9,7 +9,7 @@ defmodule Dex.Mixfile do
       deps_path: "deps",
       lockfile: "mix.lock",
       elixir: "~> 1.3",
-      deps: deps,
+      deps: deps(),
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       source_url: "https://github.com/datamelodies/dex",
@@ -34,14 +34,19 @@ defmodule Dex.Mixfile do
   defp applications :prod do
     [
       :dexy_lib,
+      :dexy_plugin_kv,
+      :dexy_plugin_json,
       :dexy_plugin_mail,
+      :dexy_plugin_http,
+      :dexy_plugin_datetime,
 
       :logger,
       :gproc,
       :erlsom,
-      :erlang_js,
-      :erlang_v8, 
+      #:erlang_js,
+      #:erlang_v8, 
       :con_cache,
+      :riakc,
       :riak_core,
 
       #:socket,
@@ -88,8 +93,8 @@ defmodule Dex.Mixfile do
       {:pooler, "~> 1.5"},
       {:riak_core, ">= 2.2.6", hex: :riak_core_ng},
 
-      {:erlang_js, github: "basho/erlang_js", branch: "develop"},
-      {:erlang_v8, github: "strange/erlang_v8", compile: "make"},
+      #{:erlang_js, github: "basho/erlang_js", branch: "develop"},
+      #{:erlang_v8, github: "strange/erlang_v8", compile: "make"},
       {:jsx, "~> 2.8", override: true},
       {:riakc, "~> 2.4", override: true},
 
