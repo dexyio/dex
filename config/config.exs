@@ -89,14 +89,17 @@ config :dex, Dex.KV.Adapters.Riak,
   search_indices: [
     {"idx_userdata",
         schema: "schema_userdata",
-        n_val: 3
+        n_val: 1
     }
   ],
   bucket_types: [
     {"userdata",
+     #backend: "leveldb_mult",
+        n_val: 1,
         allow_mult: false,
+        last_write_wins: true,
+        dvv_enabled: false,
         search_index: "idx_userdata",
-        n_val: 3
     }
   ]
 

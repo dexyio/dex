@@ -115,6 +115,11 @@ defmodule Dex.Service.Plugins.Core.DataTest do
     """ |> assert_raise!(Dex.Error.SyntaxError)
     ~S"""
     <data>
+      ---
+    </data>
+    """ |> assert_raise!(Dex.Error.SyntaxError)
+    ~S"""
+    <data>
       ...
     </data>
     """ |> assert_raise!(Dex.Error.CompileError)

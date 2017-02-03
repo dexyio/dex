@@ -17,16 +17,16 @@ defmodule Dex.KV.Adapters.RiakTest do
   @content_type_userdata 'application/dexyml'
 
   test "put & get" do
-    key = riak_key
-    val_ = riak_val
-    :ok = Riak.put(riak_bucket, key, val_, content_type: @content_type_userdata)
-    {:ok, ^val_} = Riak.get(riak_bucket, key)
+    key = riak_key()
+    val_ = riak_val()
+    :ok = Riak.put(riak_bucket(), key, val_, content_type: @content_type_userdata)
+    {:ok, ^val_} = Riak.get(riak_bucket(), key)
   end
 
   test "search" do
-    :ok = Riak.put(riak_bucket, riak_key, riak_val, content_type: @content_type_userdata)
+    :ok = Riak.put(riak_bucket(), riak_key(), riak_val(), content_type: @content_type_userdata)
     assert (
-      case Riak.search!(@index_userdata, "_yz_rb:#{user} AND bucket:#{bucket}") do
+      case Riak.search!(@index_userdata, "_yz_rb:#{user()} AND bucket:#{bucket()}") do
           {:search_results, _, _, cnt} when cnt > 0 -> true
           _ -> false
       end
@@ -41,17 +41,17 @@ defmodule Dex.KV.Adapters.RiakTest do
   end
 
   def riak_bucket do
-    {@bucket_type_userdata, user} 
+    {@bucket_type_userdata, user()} 
   end
 
   def riak_key do
-    bucket <> ":" <> Dex.KV.unique_key
+    bucket() <> ":" <> Dex.KV.unique_key
   end
 
   def riak_val do
     %DataPut{
-      bucket: bucket,
-      data: val,
+      bucket: bucket(),
+      data: val(),
       datetime: Lib.datetime_now |> Lib.datetime_format!("isoz"),
       created: Lib.now(:usecs)
     }

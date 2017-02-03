@@ -94,19 +94,6 @@ defmodule Dex.Service.Plugins.CoreTest do
     """ |> match!(%{})
   end
 
-  test "javascript" do
-    ~S"""
-    @javascript
-    return 1+1;
-    """ |> assert!(2)
-
-    ~S"""
-    @javascript
-    var f = function(a) { return a + 1; }
-    return f(1)
-    """ |> assert!(2)
-  end
-
   test "access array & tuple" do
     ~S"""
     @dexyml

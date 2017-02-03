@@ -87,11 +87,11 @@ defmodule Dex.Test do
     app = %App{} = App.parse! user = Helper.id, script
     delete_purge_module mod = "DEX.USERS.#{String.upcase user}.TEST"
     {mod, _bin} = App.compile! app, mod
-    js = Dex.JS.take_handle
+    js = nil #js = Dex.JS.take_handle
     state = mod._F0 %Dex.Service.State{
       req: Helper.request, user: Helper.user, app: app, js: js
     }
-    Dex.JS.return_handle js
+    #Dex.JS.return_handle js
     Mappy.val(state.mappy, "data")
   end
 

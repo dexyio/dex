@@ -137,30 +137,6 @@ defmodule Dex.Service.Plugins.Core.FnTest do
     """ |> assert!(%{"p1"=>"hello", "p2"=>"world", "p3"=>1})
   end
 
-  test "javascript" do
-    ~S"""
-    <data>
-    @lang javascript
-    <fn js='cmd'>
-      return eval(cmd);
-    </fn>
-
-    | js "1+1"
-  </data>
-    """ |> assert!(2)
-
-    ~S"""
-    <data>
-      @lang javascript
-      <fn js='cmd'>
-        return eval(cmd);
-      </fn>
-
-      | js ~s/"hello world"/
-    </data>
-    """ |> assert!("hello world")
-  end
-
   test "calling in function" do
     _ = ~S'''
     (task = Task.async fn ->

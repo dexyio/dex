@@ -68,12 +68,10 @@ defmodule Dex.Service.App do
 
   @bucket :erlang.term_to_binary(__MODULE__)
 
-  def parse! user_id, str do
-    case String.split(str, ~r/\n|$/u, parts: 2) do
-      [compiler, script] ->
-        compiler
-          |> String.trim
-          |> do_parse({user_id, script})
+  def parse! user_id, script do
+    case String.split(script, ~r/\n|$/u, parts: 2) do
+      [pre, post] ->
+        pre |> String.trim |> do_parse({user_id, post})
       _ ->
         XML.parse! user_id, "<data/>"
     end
@@ -104,6 +102,7 @@ defmodule Dex.Service.App do
     </fn:_html_>
     | map header: {content-type: "text/html;charset=utf8"}
           body: html()
+          code: 200
     </data>
     """
     XML.parse! user_id, script
@@ -142,13 +141,13 @@ defmodule Dex.Service.App do
     XML.parse! user_id, script
   end
 
-  defp do_parse(script = <<first::8, _::bits>>, {user_id, _}) \
+  defp do_parse(pre = <<first::8, _::bits>>, {user_id, post}) \
   when first in [?@, ?|] do
-    do_parse "@dexyml", {user_id, script}
+    do_parse "@dexyml", {user_id, pre <> "\r\n" <> post}
   end
 
-  defp do_parse script, {user_id, _} do
-    do_parse "@text", {user_id, script}
+  defp do_parse pre, {user_id, post} do
+    do_parse "@text", {user_id, pre <> "\r\n" <> post}
   end
 
   defp annotations script do

@@ -1,7 +1,7 @@
 $ iex
 
 >
-schema = "schema_userdata4"
+schema = "schema_userdata"
 index = "idx_userdata"
 pid = :pooler.take_group_member(:riak)
 xml = File.read! "priv/schemas/schema_userdata.xml"
@@ -13,12 +13,16 @@ xml = File.read! "priv/schemas/schema_userdata.xml"
 
 
 $
+sudo riak-admin bucket-type create userdata \
+'{"props":{"backend":"leveldb_mult","n_val":3,"search_index":"idx_userdata","allow_mult":false,"last_write_wins":true,"dvv_enabled":false}}'
+
 sudo riak-admin bucket-type update userdata \
-'{"props":{"search_index":"idx_userdata","allow_mult":false,"last_write_wins":true,"dvv_enabled":false}}'
+'{"props":{"backend":"leveldb_mult","n_val":3,"search_index":"idx_userdata","allow_mult":false,"last_write_wins":true,"dvv_enabled":false}}'
+
 sudo riak-admin bucket-type activate userdata
 
 
-$ cd /usr/lib/riak/
+$ cd /usr/lib64/riak/
 $ sudo cp ~/dex/engine/src/yz_dexyml_extractor.erl .
 $ sudo riak attach
 >

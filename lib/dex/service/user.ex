@@ -72,7 +72,7 @@ defmodule Dex.Service.User do
 
   defp secret(user_id, secured_pw) do
     String.downcase user_id
-    sha256 user_id <> ":" <> secured_pw
+    sha256(user_id <> ":" <> secured_pw)
   end
 
 end
