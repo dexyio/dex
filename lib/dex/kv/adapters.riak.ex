@@ -80,7 +80,7 @@ defmodule Dex.KV.Adapters.Riak do
       props: props |> Enum.into(%{})
     }
     (cmd = "riak-admin bucket-type create #{type} '#{json}'"
-      |> String.to_char_list)
+      |> String.to_charlist)
       |> os_cmd
     {type, cmd}
   end
@@ -88,7 +88,7 @@ defmodule Dex.KV.Adapters.Riak do
   def update_bucket_type(type, props) do
     json = JSON.encode! %{props: props |> Enum.into(%{})}
     (cmd = "riak-admin bucket-type update #{type} '#{json}'"
-      |> String.to_char_list)
+      |> String.to_charlist)
       |> os_cmd
     {type, cmd}
   end
@@ -106,7 +106,7 @@ defmodule Dex.KV.Adapters.Riak do
   end
 
   def os_cmd(cmd) when is_bitstring(cmd) do
-    os_cmd(cmd |> String.to_char_list)
+    os_cmd(cmd |> String.to_charlist)
   end
 
   def os_cmd(cmd) do

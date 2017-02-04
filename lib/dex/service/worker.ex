@@ -144,7 +144,7 @@ defmodule Dex.Service.Worker do
     map
   end
 
-  def terminate(_reason, state) do
+  def terminate(_reason, _state) do
     #Dex.JS.return_handle state.js
     :ok
   end

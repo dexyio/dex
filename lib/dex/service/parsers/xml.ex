@@ -1125,7 +1125,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp indents_inc indents do ["  " | indents] end
 
-  defp space n do String.ljust("", n, ?\s) end
+  defp space n do String.duplicate("", n) end
 
   defp attrs_to_map attrs, _state do
     if attrs == [] do nil else
