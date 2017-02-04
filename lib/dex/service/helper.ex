@@ -107,9 +107,9 @@ defmodule Dex.Service.Helper do
 
   defp print state, :code do
     IO.puts "\n=PARSED CODES=================================\n"
-    IO.puts state.script.parsed |> String.rstrip
+    IO.puts state.script.parsed |> String.trim_trailing
     IO.puts "\n=TRANSLATED CODES=============================\n"
-    IO.puts state.script.translated |> String.rstrip
+    IO.puts state.script.translated |> String.trim_trailing
     state
   end
   """

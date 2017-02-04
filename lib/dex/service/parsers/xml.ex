@@ -260,7 +260,7 @@ defmodule Dex.Service.Parsers.XML do
         regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+(?=.*?\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|.*))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
-          match, "|" <> _ -> String.rstrip(match) <> ":#{no}"
+          match, "|" <> _ -> String.trim_trailing(match) <> ":#{no}"
           match, "@" <> _ -> ~R/(@\w+)(\s*?.*?)(?=\s+@\w+|$)/u
             |> Regex.replace(match, fn _, f1, f2 ->
               "#{f1} ##{no}#{f2}"
@@ -437,7 +437,7 @@ defmodule Dex.Service.Parsers.XML do
         %{
           name: Enum.at(list, 1),
           line: Enum.at(list, 2) |> String.to_integer,
-          data: Enum.at(list, 3) |> String.strip,
+          data: Enum.at(list, 3) |> String.trim,
           opts: Enum.at(list, 4) |> extract_opts
         }
       end)
@@ -448,7 +448,7 @@ defmodule Dex.Service.Parsers.XML do
     ~R/([\w\.\-:]+): +([\s\S]+?)(?=\s+[\w\.\-:]+: +|$)/u
       |> Regex.scan(opts)
       |> Enum.into(%{}, fn [_match, key, val] ->
-        {key, String.rstrip val}
+        {key, String.trim_trailing val}
       end)
   end
 
@@ -706,7 +706,7 @@ defmodule Dex.Service.Parsers.XML do
   defp translate_opts nil, _ do "%{}" end
 
   defp translate_opts(str, state) when is_bitstring(str) do
-    res = (str |> String.strip)
+    res = (str |> String.trim)
       |> split_opts 
       |> Enum.filter_map(
         fn {"_" <> _, _} -> false; _ -> true end,
@@ -736,7 +736,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp transform_maps str do
-    String.strip(str)
+    String.trim(str)
       |> do_transform_maps(:transform_key)
       |> do_transform_maps(:transform_empty)
       |> do_transform_maps(:prepend_head)
@@ -754,7 +754,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp do_transform_maps str, :prepend_head do
     ~R/(?<!%){\s*"[\w\.\-]+"\s*=>/u
-      |> Regex.replace(str, &("%#{String.strip &1}"))
+      |> Regex.replace(str, &("%#{String.trim &1}"))
   end
 
   defp translate_cdata state do
@@ -987,7 +987,7 @@ defmodule Dex.Service.Parsers.XML do
         function(#{total_params}) {
           #{state.cdata}
         }
-        \"\"\" |> String.strip
+        \"\"\" |> String.trim
         run_javascript(s, script, [#{transform_vars total_params, state}])
       end
     """
@@ -1025,8 +1025,8 @@ defmodule Dex.Service.Parsers.XML do
         """
         \n#{space 4}[\"\"\"
         #{space 4}#{transform_sharp_brackets state.cdata, state}
-        #{space 4}\"\"\" |> String.strip]
-        """ |> String.rstrip
+        #{space 4}\"\"\" |> String.trim]
+        """ |> String.trim_trailing
       false ->
         translate_args state.cdata, state
     end

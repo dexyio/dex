@@ -252,7 +252,7 @@ defmodule Dex.Service.App do
   def apps, do: @apps
 
   def update app_id do
-    :ok = put(@default_userid, app_id, String.strip(script app_id))
+    :ok = put(@default_userid, app_id, String.trim(script app_id))
     debug "#{__MODULE__} update -> #{app_id}, ok."
   end
 
