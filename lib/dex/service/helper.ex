@@ -1,6 +1,7 @@
 defmodule Dex.Service.Helper do
 
   use Dex.Common
+  use DexyLib, as: Lib
   alias DexyLib.Mappy
   alias DexyLib.JSON
   alias Dex.Service.Seater
@@ -56,19 +57,15 @@ defmodule Dex.Service.Helper do
   end
 
   defp handle_throw {:error, reason}, state do
-    reason = inspect reason
-    raise Error.RuntimeError, reason: reason, state: state
+    raise Error.RuntimeError, reason: Lib.to_string(reason), state: state
   end
 
   defp handle_throw {error, reason}, state do
-    error = to_string error
-    reason = inspect reason
-    raise Error.RuntimeError, reason: [error, reason], state: state
+    raise Error.RuntimeError, reason: [error, Lib.to_string(reason)], state: state
   end
 
   defp handle_throw error, state do
-    error = inspect error
-    raise Error.RuntimeError, reason: error, state: state
+    raise Error.RuntimeError, reason: Lib.to_string(error), state: state
   end
 
   defp check state do

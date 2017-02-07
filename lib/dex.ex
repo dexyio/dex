@@ -17,13 +17,14 @@ defmodule Dex do
     use DexyLib.Supervisor, otp_app: :dex
   end
 
+  @spec start(atom, list) :: {:ok, pid} | {:error, term}
+
   def start(_type, _args) do
-    {:ok, pid} = Supervisor.start_link
-    start_riak()
-    {:ok, pid}
+    start_riak_core()
+    Supervisor.start_link
   end
 
-  defp start_riak do
+  defp start_riak_core do
     case Mix.env do
       :test -> :ok
       _ ->
