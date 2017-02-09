@@ -156,7 +156,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_element_fn do
-    line2 = ~R/(<fn(?::\w+)?)\s+(\w+)\s*=\s*['"]([\s\S]*?)['"]/u
+    line2 = ~R/(<fn(?::\w+)?)\s+([\w\-]+)\s*=\s*['"]([\s\S]*?)['"]/u
       |> Regex.replace(line, "\\1 _id='\\2' _params='\\3'")
     {line2, no} 
   end
@@ -192,7 +192,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_fix_line_syntax {line, no}, :fix_array_bracket do
-    if Regex.match? ~R/^ *\|\s+\w+/u, line do
+    if Regex.match? ~R/^ *\|\s+[\w\.\-]+/u, line do
       {Mappy.transform(line), no}
     else
       {line, no}
@@ -256,7 +256,6 @@ defmodule Dex.Service.Parsers.XML do
     res = String.split(state.script, ~R/\r?\n/)
     |> Enum.reduce({"", 1, false}, fn line, {script, no, pass?} ->
       res = pass? && line || (
-      #regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+.*?(?=\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|\s*$))/u
         regex = ~R/^\s*(@[a-z]+(?:\s+.*|\s*$)|<[a-z][\w\.\-]*[^\s\/>]+|\|\s+[\w\.\-]+(?=.*?\s+\|\s+[\w\.\-]+|\s*<\/\s*[\w\.\-]+>|.*))/u
         Regex.replace regex, line, fn 
           match, "<" <> _ -> match <> " _line='#{no}'"
@@ -316,8 +315,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_register_lib state, :scan_tags do
-    apps =
-      annots("use", state.script)
+    apps = annots("use", state.script)
       |> Enum.map(fn %{line: line, data: data, opts: opts} ->
         {user, app} = case String.split(data, "/") do
           [user, app] -> {user, app}
@@ -330,21 +328,16 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp do_register_lib {apps, state}, :load_apps do
-    {
-      Enum.into(apps, %{}, fn %{user: user, app: app, opts: opts} ->
-        case App.get user, app do
-          {:ok, found = %{owner: ^user}} ->
-            {opts["as"] || app, found}
-          {:ok, found = %{export: true}} ->
-            {opts["as"] || app, found}
-          {:error, :app_notfound} ->
-            raise Error.AppNotFound, reason: [user, app], state: state
-          _ ->
-            raise Error.AppNotExported, reason: [user, app], state: state
-        end
-      end),
-      state
-    }
+    res = Enum.into apps, %{}, fn %{user: user, app: app, opts: opts} ->
+      app_alias = opts["as"] || (String.split(app, ".") |> List.last)
+      case App.get user, app do
+        {:ok, found = %{owner: ^user}} -> {app_alias, found}
+        {:ok, found = %{export: true}} -> {app_alias, found}
+        {:error, :app_notfound} -> raise Error.AppNotFound, reason: [user, app], state: state
+        _ -> raise Error.AppNotExported, reason: [user, app], state: state
+      end
+    end
+    {res, state}
   end
 
   defp do_register_lib {apps, state}, :register do
@@ -353,7 +346,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp register_functions state do
-    funs = ~R/<fn\s+[\s\S]*?id\s*=\s*(['"])(\w+)\1/u
+    funs = ~R/<fn\s+[\s\S]*?id\s*=\s*(['"])([\w\-]+)\1/u
       |> Regex.scan(state.script)
       |> Enum.map_reduce(0, fn [_match, _quote, id], no ->
         no = no + 1
@@ -445,7 +438,7 @@ defmodule Dex.Service.Parsers.XML do
 
   defp extract_opts nil do %{} end
   defp extract_opts opts do
-    ~R/([\w\.\-:]+): +([\s\S]+?)(?=\s+[\w\.\-:]+: +|$)/u
+    ~R/([\w\-:]+): +([\s\S]+?)(?=,?\s+[\w\-:]+: +|$)/u
       |> Regex.scan(opts)
       |> Enum.into(%{}, fn [_match, key, val] ->
         {key, String.trim_trailing val}
@@ -453,7 +446,7 @@ defmodule Dex.Service.Parsers.XML do
   end
 
   defp regex(:annot, name) do
-    regex = ~S/(?:^|\s)@(/ <> name <> ~S/)\s#([0-9]+)([\s\S]*?)(?=$|\s*\n|\s+@\w+\s|\s+<\/?[\w\.\-]+|(\s+\w+:\s[^@<\n]+))\4*/
+    regex = ~S/(?:^|\s)@(/ <> name <> ~S/)\s#([0-9]+)([\s\S]*?)(?=$|\s*\n|\s+@\w+\s|\s+<\/?[\w\.\-]+|(,?\s+\w+:\s[^@<\n]+))\4*/
     {:ok, res} = Regex.compile(regex, "iu")
     res
   end

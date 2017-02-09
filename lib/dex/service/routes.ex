@@ -50,7 +50,7 @@ defmodule Dex.Service.Routes do
 
   defp route! str, state do
     try do
-      case String.split str, ".", parts: 2 do
+      case String.split str, ~R/\.(?=[\w\-]+$)/, parts: 2 do
         [fun] -> do_route! fun
         [app, fun] -> do_route! app, fun
       end

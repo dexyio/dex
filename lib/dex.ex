@@ -2,7 +2,6 @@ defmodule Dex do
 
   use Application
   use DexyLib
-  require Dex.JS
 
   defstruct map: %{}, js: nil
 
