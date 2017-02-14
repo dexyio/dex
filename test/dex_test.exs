@@ -28,9 +28,6 @@ defmodule DexTest do
     @dexyml
     "hello world"
     """ |> assert!("hello world")
-    ~S"""
-    | set "hello world"
-    """ |> assert!("hello world")
   end
 
   test "function not found" do

@@ -54,19 +54,29 @@ defmodule Dex.Service.Worker do
 
   # private functions
 
-  defp do_play state do
+  defp do_play state = %{req: req} do
+    case req.fun do
+      "_deploy"   -> state |> deploy_app! 
+      "_test"     -> state |> compile_app! |> play_app!
+      _           -> state |> get_app! |> play_app!
+    end
+  end
+
+  defp deploy_app! state do
+    state
+  end
+
+  defp compile_app! state = %{req: req} do
+    #req.body |> App.parse! |> App.compile!
+    state
+  end
+
+  defp play_app! state = %{req: req} do
     try do
-      state
-        |> check_app!
-        |> set_vars
-        |> play!
-        |> reply!
+      state |> check! |> init! |> play! |> reply!
     rescue
-      ex in Error.Stopped -> 
-        reply! ex.state
-      ex ->
-        #IO.inspect ex
-        #IO.inspect System.stacktrace
+      ex in Error.Stopped -> reply! ex.state
+      ex -> #IO.inspect ex; #IO.inspect System.stacktrace
         ex_map = struct_to_map(ex)
         state2 = (ex_map[:state] || state) |> struct_to_map
         %{
@@ -82,14 +92,13 @@ defmodule Dex.Service.Worker do
     end
   end
 
-  defp check_app! state = %State{req: req} do
-    {user_id, app_id} =
-      case req.app do
-        app_id = "_" <> _ -> {"*", app_id}
-        app_id -> {req.user, app_id || ""}
-      end
+  defp get_app! state = %State{req: req} do
+    {user_id, app_id} = case req.app do
+      app_id = "_" <> _ -> {"*", app_id}
+      app_id -> {req.user, app_id || ""}
+    end
     case Seater.take_app user_id, app_id do
-      {:ok, {app, mod}} -> check_auth! %{state | app: app, mod: mod}
+      {:ok, {app, mod}} -> check! %{state | app: app, mod: mod}
       {:error, :app_notfound} -> raise Error.AppNotFound,
         code: Code.not_found, reason: req.app, state: state
       {:error, reason} -> raise Error.AppLoadingFailed,
@@ -97,7 +106,7 @@ defmodule Dex.Service.Worker do
     end
   end
  
-  defp check_auth! state = %State{req: req, app: app} do
+  defp check! state = %State{req: req, app: app} do
     case app.funs[req.fun] do
       nil -> state
       %{access: :public} -> state
@@ -106,7 +115,7 @@ defmodule Dex.Service.Worker do
     end
   end
   
-  defp set_vars state = %State{req: req} do
+  defp init! state = %State{req: req} do
     map = state.mappy
       |> Mappy.set("req.peer", req.peer)
       |> Mappy.set("req.app", req.app)
@@ -122,8 +131,8 @@ defmodule Dex.Service.Worker do
   end
 
   defp play! state = %State{req: req, app: app, mod: mod} do
-    fun = App.real_fun(app, req.fun) || App.real_fun(app, App.default_fun)
-      #|| raise Error.FunctionNotFound, state: %{state | fun: req.fun}
+    fun = App.real_fun(app, req.fun) #|| App.real_fun(app, App.default_fun)
+      || raise Error.FunctionNotFound, state: %{state | fun: req.fun}
     apply(mod, fun, [state])
   end
 

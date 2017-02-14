@@ -68,6 +68,8 @@ defmodule Dex.Service.App do
 
   @bucket :erlang.term_to_binary(__MODULE__)
 
+  @spec parse!(bitstring, bitstring) :: %__MODULE__{} | Dex.Error
+
   def parse! user_id, script do
     case String.split(script, ~r/\n|$/u, parts: 2) do
       [pre, post] ->
@@ -140,12 +142,7 @@ defmodule Dex.Service.App do
     """
     XML.parse! user_id, script
   end
-
-  defp do_parse(pre = <<first::8, _::bits>>, {user_id, post}) \
-  when first in [?@, ?|] do
-    do_parse "@dexyml", {user_id, pre <> "\r\n" <> post}
-  end
-
+  
   defp do_parse pre, {user_id, post} do
     do_parse "@text", {user_id, pre <> "\r\n" <> post}
   end

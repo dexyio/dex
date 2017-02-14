@@ -7,12 +7,14 @@ defmodule Dex.Service.Seater do
   require Logger
 
   defmodule Seat do
-    defstruct no: 0,
-              used_time: 0
+    defstruct no: nil,
+              ttl: nil,
+              allocated: nil
 
     @type t :: %__MODULE__{
-      no: 0 | pos_integer,
-      used_time: 0 | pos_integer
+      no: non_neg_integer,
+      ttl: non_neg_integer,
+      allocated: non_neg_integer
     }
   end
 
@@ -73,7 +75,8 @@ defmodule Dex.Service.Seater do
   end
 
   defp do_take_seat state = %State{free_seats: [no | rest]} do
-    used = [no | state.used_seats]
+    new_seat = %Seat{no: no}
+    used = [new_seat | state.used_seats]
     state = %{state | free_seats: rest, used_seats: used}
     {state, {:ok, no}}
   end
@@ -89,7 +92,7 @@ defmodule Dex.Service.Seater do
   end
 
   defp do_free_seats %State{free_seats: free_seats} do
-    free_seats
+    free_seats |> length
   end
 
   @spec used_seats() :: list
@@ -99,7 +102,11 @@ defmodule Dex.Service.Seater do
   end
 
   defp do_used_seats %State{used_seats: used_seats} do
-    used_seats
+    used_seats |> length
+  end
+
+  def total_seats do
+    conf()[:total_seats]
   end
 
   defp check_app app do

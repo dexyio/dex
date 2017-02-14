@@ -57,7 +57,7 @@ defmodule Dex.Service.Helper do
   end
 
   defp handle_throw {:error, reason}, state do
-    raise Error.RuntimeError, reason: Lib.to_string(reason), state: state
+    raise Error.RuntimeError, reason: DexyLib.to_string(reason), state: state
   end
 
   defp handle_throw {error, reason}, state do
