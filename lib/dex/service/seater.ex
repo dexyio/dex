@@ -59,7 +59,7 @@ defmodule Dex.Service.Seater do
     with \
       {:ok, no}         <- take_seat(),
       {:ok, module}     <- compile_app(app, no),
-      :ok               <- put_app(app, module)
+      :ok               <- cache_app(app, module)
     do
       Logger.debug "allocated_seat=#{no}"
       {:ok, module}
@@ -123,7 +123,7 @@ defmodule Dex.Service.Seater do
     "#{predef_module_name()}#{seat_no}" |> String.to_existing_atom
   end
 
-  defp put_app app, module do
+  defp cache_app app, module do
     Cache.put @bucket, {app.owner, app.id}, {app, module}
   end
 

@@ -12,7 +12,12 @@ defmodule Dex.Error do
   deferror AccessDenied
   deferror AppAliasOmitted
   deferror AppAllocationFailed
+  deferror AppDeletionFailed
+  deferror AppDeploymentFailed
+  deferror AppDisableFailed
+  deferror AppEnableFailed
   deferror AppNotExported
+  deferror AppNotDisabled
   deferror AppNotFound
   deferror AppLoadingFailed
   deferror ArithmeticError

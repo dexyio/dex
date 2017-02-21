@@ -1,7 +1,6 @@
 defmodule Dex.Service.Helper do
 
   use Dex.Common
-  use DexyLib, as: Lib
   alias DexyLib.Mappy
   alias DexyLib.JSON
   alias Dex.Service.Seater
@@ -57,7 +56,7 @@ defmodule Dex.Service.Helper do
   end
 
   defp handle_throw {:error, reason}, state do
-    raise Error.RuntimeError, reason: DexyLib.to_string(reason), state: state
+    raise Error.RuntimeError, reason: Lib.to_string(reason), state: state
   end
 
   defp handle_throw {error, reason}, state do
@@ -196,7 +195,7 @@ defmodule Dex.Service.Helper do
       %{state | authorized: true}
     else
       :authorized -> state
-      _ -> raise Error.Unauthorized, code: 401, state: state
+      false -> raise Error.Unauthorized, code: 401, state: state
     end
   end
 

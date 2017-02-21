@@ -55,54 +55,112 @@ defmodule Dex.Service.Worker do
   # private functions
 
   defp do_play state = %{req: req} do
-    case req.fun do
-      "_deploy"   -> state |> deploy_app! 
-      "_test"     -> state |> compile_app! |> play_app!
-      _           -> state |> get_app! |> play_app!
-    end
-  end
-
-  defp deploy_app! state do
-    state
-  end
-
-  defp compile_app! state = %{req: req} do
-    #req.body |> App.parse! |> App.compile!
-    state
-  end
-
-  defp play_app! state = %{req: req} do
     try do
-      state |> check! |> init! |> play! |> reply!
+      case req.fun do
+        "_" <> _ = fun -> state |> auth_basic! |> play_bif!(fun)
+        _        -> state |> take_app! |> check! |> play_app!
+      end
     rescue
       ex in Error.Stopped -> reply! ex.state
-      ex -> #IO.inspect ex; #IO.inspect System.stacktrace
-        ex_map = struct_to_map(ex)
-        state2 = (ex_map[:state] || state) |> struct_to_map
-        %{
-          error: ex_map[:message] || "RuntimeError",
-          code: ex_map[:code] || Code.bad_request,
-          message: (if ex_map[:state], do: ex.reason, else: inspect ex),
-          line: state2[:line], 
-          fun: state2[:fun],
-          args: state2[:args],
-          opts: state2[:opts]
-        }
-        |> reply_error!(state.req)
+      ex -> ex |> inspect_exception(state) |> reply_error!(state.req)
     end
   end
 
-  defp get_app! state = %State{req: req} do
-    {user_id, app_id} = case req.app do
-      app_id = "_" <> _ -> {"*", app_id}
-      app_id -> {req.user, app_id || ""}
+  defp play_bif! state = %State{}, "_test" do
+    state |> alloc_app! |> play_app!
+  end
+
+  defp play_bif! state = %State{}, "_deploy" do
+    state |> deploy_app! 
+  end
+
+  defp play_bif! state = %State{req: req}, "_script" do
+    case App.get(req.user, req.app) do
+      {:ok, app} -> reply! app.script, state
+      {:error, reason} -> raise Error.AppNotFound, state: state,
+        reason: Lib.to_string(reason)
     end
+  end
+
+  defp play_bif! state = %State{req: req}, "_enable" do
+    case App.enable(req.user, req.app) do
+      :ok -> reply! "ok", state
+      {:error, reason} -> raise Error.AppEnableFailed, state: state,
+        reason: Lib.to_string(reason)
+    end
+  end
+
+  defp play_bif! state = %State{req: req}, "_disable" do
+    case App.disable(req.user, req.app) do
+      :ok -> reply! "ok", state
+      {:error, reason} -> raise Error.AppDisableFailed, state: state,
+        reason: Lib.to_string(reason)
+    end
+  end
+
+  defp play_bif! state = %State{req: req}, "_delete" do
+    with \
+      {:ok, app} <- App.get(req.user, req.app),
+      false <- app.enabled && :app_not_disabled,
+      :ok <- App.delete(req.user, req.app)
+    do reply! "ok", state else
+      :app_not_disabled -> raise Error.AppNotDisabled, state: state
+      {:error, reason} -> raise Error.AppDeletionFailed, state: state,
+        reason: Lib.to_string(reason)
+    end
+  end
+
+  defp inspect_exception ex, state do  
+    #IO.inspect ex; #IO.inspect System.stacktrace
+    ex_map = struct_to_map(ex)
+    state2 = (ex_map[:state] || state) |> struct_to_map
+    %{
+      error: ex_map[:message] || "RuntimeError",
+      code: ex_map[:code] || Code.bad_request,
+      message: (if ex_map[:state], do: ex.reason, else: inspect ex),
+      line: state2[:line], 
+      fun: state2[:fun],
+      args: state2[:args],
+      opts: state2[:opts]
+    }
+  end
+
+  defp deploy_app! state = %{user: user, req: req}  do
+    case App.put(user.id, req.app, req.body) do
+      :ok -> reply! "ok", state
+      {:error, reason} -> raise Error.AppDeploymentFailed, state: state,
+        reason: Lib.to_string(reason)
+    end
+  end
+
+  defp alloc_app! state = %{user: user, req: req} do
+    app = App.parse!(user.id, req.body)
+    case Seater.alloc_app app do
+      {:ok, module} -> %{state | app: app, mod: module}
+      {:error, reason} -> raise Error.AppAllocationFailed, state: state,
+        reason: Lib.to_string(reason)
+    end
+  end
+
+  defp play_app! state = %State{} do
+    state |> init! |> play! |> reply!
+  end
+
+  defp take_app! state = %State{req: req} do
+    {user_id, app_id} = split_user_app state
     case Seater.take_app user_id, app_id do
-      {:ok, {app, mod}} -> check! %{state | app: app, mod: mod}
+      {:ok, {app, module}} -> %{state | app: app, mod: module}
       {:error, :app_notfound} -> raise Error.AppNotFound,
         code: Code.not_found, reason: req.app, state: state
       {:error, reason} -> raise Error.AppLoadingFailed,
         reason: reason, state: state
+    end
+  end
+
+  defp split_user_app %State{req: req} do
+    case req.app do
+      app_id = "_" <> _ -> {"*", app_id}
+      app_id -> {req.user, app_id || ""}
     end
   end
  
@@ -139,6 +197,10 @@ defmodule Dex.Service.Worker do
   defp reply! %{mappy: map, req: req} do
     result_data = Mappy.val(map, "data")
     send req.callback, {req.id, {:ok, result_data}}
+  end
+
+  defp reply! data, %{req: req} do
+    send req.callback, {req.id, {:ok, data}}
   end
 
   defp reply_error! ex, %{callback: cb_pid, id: req_id} do

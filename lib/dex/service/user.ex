@@ -59,7 +59,6 @@ defmodule Dex.Service.User do
   @spec put(bitstring, bitstring, bitstring) :: :ok | {:error, term}
 
   def put user_id, secured_pw, email do
-    user_id = String.downcase user_id
     user = %__MODULE__{
       id: user_id,
       __secret: secret(user_id, secured_pw),

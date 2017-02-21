@@ -59,7 +59,7 @@ defmodule Dex.Service.App do
   }
 
   @default_userid "*"
-  @default_fun "default"
+  @default_fun "_test"
   @path "priv/scripts/"
   @apps [
     "_apps",
@@ -262,6 +262,8 @@ defmodule Dex.Service.App do
     File.read! file
   end
 
+  @spec get(bitstring, bitstring) :: {:ok, %__MODULE__{}} | {:error, term}
+
   def get(user_id, app_id) when is_bitstring(user_id) and is_bitstring(app_id) do
     key = key(user_id, app_id)
     case KV.get(@bucket, key) do
@@ -292,16 +294,34 @@ defmodule Dex.Service.App do
     end
   end
 
-  def put(user_id, app_id, body) \
-  when is_bitstring(user_id) and is_bitstring(app_id) and is_bitstring(body) do
+  def put(user_id, app_id, body) when is_bitstring(body) do
     app = parse! user_id, body
     app = %{app | id: app_id}
     KV.put @bucket, key(user_id, app_id), app
   end
 
+  def put app = %__MODULE__{} do
+    key = key(app.owner, app.id)
+    KV.put @bucket, key, app
+  end
+
   def delete(user_id, app_id) do
     key = key user_id, app_id
     KV.delete @bucket, key
+  end
+
+  def enable user_id, app_id do
+    case get(user_id, app_id) do
+      {:ok, app} -> %{app | enabled: true} |> put
+      error -> error
+    end
+  end
+
+  def disable user_id, app_id do
+    case get(user_id, app_id) do
+      {:ok, app} -> %{app | enabled: false} |> put
+      error -> error
+    end
   end
 
   def check!([{current, children} | tail], rest, state) do
