@@ -28,6 +28,7 @@ defmodule Dex.Service.User do
 
   use Dex.Common
   use Timex
+  alias Dex.Service.Bot
   require Dex.KV, as: KV
  
   @spec get(bitstring) :: {:ok, %__MODULE__{}} | {:error, :user_notfound}
@@ -59,6 +60,13 @@ defmodule Dex.Service.User do
   @spec put(bitstring, bitstring, bitstring) :: :ok | {:error, term}
 
   def put user_id, secured_pw, email do
+    case do_put(user_id, secured_pw, email) do
+      :ok -> Bot.reload_user user_id; :ok
+      error -> error
+    end
+  end
+
+  defp do_put user_id, secured_pw, email do
     user = %__MODULE__{
       id: user_id,
       __secret: secret(user_id, secured_pw),

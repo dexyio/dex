@@ -28,7 +28,7 @@ defmodule Dex.Service.Vnode do
   def handle_command req = %Request{user: user_id}, _from, state = %{partition: part} do
     #Logger.debug("got a request! => #{inspect req}")
     res = with \
-      :undefined <- :gproc.lookup_local_name(user_id),
+      nil <- Bot.find(user_id),
       user = %User{} <- get_user(user_id),
       {:ok, pid} <- Bot.new(user),
       :ok <- store_bot(part, user_id)
@@ -94,10 +94,8 @@ defmodule Dex.Service.Vnode do
 
   defp get_user user_id do
     case User.get(user_id) do
-      {:ok, user} ->
-        user.enabled && user || {:error, :user_disabled}
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, user} -> user.enabled && user || {:error, :user_disabled}
+      {:error, _reason} = err -> err
     end
   end
 
