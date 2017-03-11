@@ -1,6 +1,6 @@
 defmodule Dex.Cache.Adapters.ConCache do
 
-  @behaviour Dex.Cache
+  @behaviour Dex.Cache.Adapter
 
   use Dex.Common
 

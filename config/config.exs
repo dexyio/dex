@@ -3,46 +3,68 @@ use Mix.Config
 #
 # Bucket Indexes
 #
-g_CORE_BUCKET_IDX_START = 0
-g_CORE_BUCKET_IDX_END = 99
+core_bucket_idx_start = 0
+core_bucket_idx_end = 99
 
-g_PLUGIN_BUCKET_IDX_START = 100
-g_PLUGIN_BUCKET_IDX_END = 199
+plugin_bucket_idx_start = 100
+plugin_bucket_idx_end = 199
 
-g_CORE_BUCKET_IDX = [
+core_bucket_idx = [
   :USER,
   :APP,
-] |> Enum.with_index(g_CORE_BUCKET_IDX_START)
+] |> Enum.with_index(core_bucket_idx_start)
 
-g_PLUGIN_BUCKET_IDX = [
+plugin_bucket_idx = [
   :KV,
-] |> Enum.with_index(g_PLUGIN_BUCKET_IDX_START)
+] |> Enum.with_index(plugin_bucket_idx_start)
 
 
-(g_CORE_BUCKET_IDX |> Enum.at(g_CORE_BUCKET_IDX_END+1)) && throw :core_buckets_exceeded
-(g_PLUGIN_BUCKET_IDX |> Enum.at(g_PLUGIN_BUCKET_IDX_END+1)) && throw :plugin_buckets_exceeded
+(core_bucket_idx |> Enum.at(core_bucket_idx_end+1)) && throw :core_buckets_exceeded
+(plugin_bucket_idx |> Enum.at(plugin_bucket_idx_end+1)) && throw :plugin_buckets_exceeded
 
 
 #
 # Module Configuration
 #
+config :dex, Dex,
+  compiler_options: [
+    ignore_module_conflict: true
+  ]
+
 config :dex, Dex.Supervisor,
   children: [
     supervisor: :pooler_sup,
-    supervisor: Dex.Service.Bot.Supervisor,
+    supervisor: Dex.Bot.Supervisor,
+    supervisor: Dex.Seater.Supervisor,
     supervisor: Dex.Cache.Adapters.ConCache.Supervisor,
-    worker: {Dex.Service.Seater, _args = [[name: Dex.Service.Seater]]},
+    worker: {Dex.Event, _args = [[name: Dex.Event]]},
     worker: {:riak_core_vnode_master,
-     _args = [Dex.Service.Vnode],
+     _args = [Dex.Vnode],
      _opts = [id: Vnode_master_worker]
     },
   ]
 
-config :dex, Dex.Service.User,
-  bucket: <<g_CORE_BUCKET_IDX[:USER]>>
 
-config :dex, Dex.Service.App,
-  bucket: <<g_CORE_BUCKET_IDX[:APP]>> 
+config :dex, Dex.Seater.Supervisor,
+  children: [
+    worker: {Dex.Seater, [test: 1000], id: :test},
+    worker: {Dex.Seater, [prod: 1000], id: :prod}
+  ]
+
+config :dex, Dex.User,
+  bucket: <<core_bucket_idx[:USER]>>,
+  event_handlers: [
+    {Dex.User.EventHandler, []}
+  ]
+
+config :dex, Dex.App,
+  bucket: <<core_bucket_idx[:APP]>>,
+  event_handlers: [
+    {Dex.App.EventHandler, []}
+  ]
+
+config :dex, Dex.Event,
+  managers: [Dex.App, Dex.User]
 
 config :dex, Dex.JS, 
   adapter: Dex.JS.Adapters.ErlangJS,
@@ -67,15 +89,11 @@ config :dex, Dex.Cache,
 
 config :dex, Dex.Cache.Adapters.ConCache,
   default_opts: [
-    ttl: :timer.seconds(10),
-    ttl_check: :timer.seconds(1),
-    touch_on_read: true
+    #ttl: :timer.seconds(60),
+    #ttl_check: :timer.seconds(1),
+    #touch_on_read: true
   ],
-  seater: [
-    ttl: :timer.seconds(3),
-    ttl_check: :timer.seconds(1),
-    touch_on_read: true
-  ]
+  seater: []
 
 config :dex, Dex.KV,
   adapter: Dex.KV.Adapters.Riak
@@ -103,18 +121,19 @@ config :dex, Dex.KV.Adapters.Riak,
     }
   ]
 
-config :dex, Dex.Service.Seater,
-  total_seats: 1000
+config :dex, Dex.Seater,
+  ttl_secs: 60,
+  purge_after_msecs: 10_000
 
 # Warning:
 #   If the module name changes, the user code must be recompiled.
 #   Because the module is determined when user code is compiled.
 #   We are planning to automate this process.
-config :dex, Dex.Service.Plugins,
-  core:   Dex.Service.Plugins.Core,
-  now:    Dex.Service.Plugins.Core,
-  user:   Dex.Service.Plugins.User,
-  app:    Dex.Service.Plugins.App,
+config :dex, Dex.Plugins,
+  core:   Dex.Plugins.Core,
+  now:    Dex.Plugins.Core,
+  user:   Dex.Plugins.User,
+  app:    Dex.Plugins.App,
   kv:     DexyPluginKV,
   json:   DexyPluginJson,
   http:   DexyPluginHTTP,

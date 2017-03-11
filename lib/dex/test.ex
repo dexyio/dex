@@ -1,22 +1,22 @@
 defmodule Dex.Test do
   
   use Dex.Common
+  alias Dex.App
   alias DexyLib.Mappy
-  alias Dex.Service.App
 
   defmodule Helper do
     def id, do: "foo"
 
-    def user, do: %Dex.Service.User{
+    def user, do: %Dex.User{
       id: id(), 
       __secret: sha256(id() <> ":" <> id()),
       enabled: true
     }
 
-    def request, do: %Dex.Service.Request{
+    def request, do: %Dex.Request{
       user: id(),
       app: "test",
-      fun: "GET",
+      fun: "_test",
       args: ["arg1", 2, 3..10],
       opts: %{"foo" => "bar", "bar" => "baz"},
       header: %{

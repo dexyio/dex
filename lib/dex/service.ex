@@ -1,10 +1,10 @@
 defmodule Dex.Service do
 
   use Dex.Common
-  alias Dex.Service.Request
-  alias Dex.Service.User
-  alias Dex.Service.App
-  alias Dex.Service.Worker
+  alias Dex.User
+  alias Dex.App
+  alias Dex.Request
+  alias Dex.Worker
   alias DexyLib.Mappy
 
   defmodule State do
@@ -89,9 +89,9 @@ defmodule Dex.Service do
     pref_list = :riak_core_apl.get_primary_apl doc_idx, nodes, Dex.Service
     [{index_node, _type}] = pref_list
     
-    # riak core appends "_master" to Dex.Service.Vnode
+    # riak core appends "_master" to Dex.Vnode
     :riak_core_vnode_master.sync_spawn_command \
-      index_node, req, Dex.Service.Vnode_master
+      index_node, req, Dex.Vnode_master
   end
 
 end

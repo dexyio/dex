@@ -7,7 +7,7 @@ defmodule Dex.Common do
       use Dex
       use Dex.Error
       use DexyLib, as: Lib
-      require Dex.Service.Code, as: Code
+      require Dex.Code, as: Code
       import unquote(__MODULE__)
       
       def conf(mod \\ __MODULE__) do

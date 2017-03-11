@@ -1,29 +1,26 @@
 defmodule Dex.Cache do
 
-  use Behaviour
-
   @adapter Application.get_env(:dex, __MODULE__)[:adapter]
 
-  @type error :: {:error, reason}
-  @type reason :: term
+  defmodule Adapter do
+    @type error :: {:error, reason}
+    @type reason :: term
 
-  defcallback new_bucket(atom) :: {:ok, pid} | error
+    @callback new_bucket(atom) :: {:ok, pid} | error
+    @callback buckets :: list
+
+    @callback add(atom, any, any) :: :ok | error
+    @callback put(atom, any, any) :: :ok | error
+    @callback get(atom, any, any) :: term | error
+    @callback del(atom, any) :: :ok | error
+  end
+
   defdelegate new_bucket(bucket), to: @adapter
-
-  defcallback add(atom, any, any) :: :ok | error
-  defdelegate add(bucket, key, val), to: @adapter
-
-  defcallback put(atom, any, any) :: :ok | error
-  defdelegate put(bucket, key, val), to: @adapter
-
-  defcallback get(atom, any, any) :: term | error
-  defdelegate get(bucket, key), to: @adapter
-  defdelegate get(bucket, key, default), to: @adapter
-
-  defcallback del(atom, any) :: :ok | error
-  defdelegate del(bucket, key), to: @adapter
-
-  defcallback buckets :: list
   defdelegate buckets, to: @adapter
+
+  defdelegate add(bucket, key, val), to: @adapter
+  defdelegate put(bucket, key, val), to: @adapter
+  defdelegate get(bucket, key, default \\ nil), to: @adapter
+  defdelegate del(bucket, key), to: @adapter
 
 end
