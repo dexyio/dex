@@ -3,23 +3,23 @@ use Mix.Config
 #
 # Bucket Indexes
 #
-core_bucket_idx_start = 0
-core_bucket_idx_end = 99
+bucket_idx_start = 0
+bucket_idx_end = 99
 
 plugin_bucket_idx_start = 100
 plugin_bucket_idx_end = 199
 
-core_bucket_idx = [
-  :USER,
-  :APP,
-] |> Enum.with_index(core_bucket_idx_start)
+bucket_idx = [
+  :user,
+  :app,
+] |> Enum.with_index(bucket_idx_start)
 
 plugin_bucket_idx = [
   :KV,
 ] |> Enum.with_index(plugin_bucket_idx_start)
 
 
-(core_bucket_idx |> Enum.at(core_bucket_idx_end+1)) && throw :core_buckets_exceeded
+(bucket_idx |> Enum.at(bucket_idx_end+1)) && throw :bucket_idx_exceeded
 (plugin_bucket_idx |> Enum.at(plugin_bucket_idx_end+1)) && throw :plugin_buckets_exceeded
 
 
@@ -36,7 +36,7 @@ config :dex, Dex.Supervisor,
     supervisor: :pooler_sup,
     supervisor: Dex.Bot.Supervisor,
     supervisor: Dex.Seater.Supervisor,
-    supervisor: Dex.Cache.Adapters.ConCache.Supervisor,
+    supervisor: Dex.Cache.Supervisor,
     worker: {Dex.Event, _args = [[name: Dex.Event]]},
     worker: {:riak_core_vnode_master,
      _args = [Dex.Vnode],
@@ -52,13 +52,13 @@ config :dex, Dex.Seater.Supervisor,
   ]
 
 config :dex, Dex.User,
-  bucket: <<core_bucket_idx[:USER]>>,
+  bucket: <<bucket_idx[:user]>>,
   event_handlers: [
     {Dex.User.EventHandler, []}
   ]
 
 config :dex, Dex.App,
-  bucket: <<core_bucket_idx[:APP]>>,
+  bucket: <<bucket_idx[:app]>>,
   event_handlers: [
     {Dex.App.EventHandler, []}
   ]
@@ -85,7 +85,9 @@ config :dex, Dex.JS,
   ]
 
 config :dex, Dex.Cache,
-  adapter: Dex.Cache.Adapters.ConCache
+  adapter: Dex.Cache.Adapters.ConCache,
+  initial_buckets: [
+  ]
 
 config :dex, Dex.Cache.Adapters.ConCache,
   default_opts: [

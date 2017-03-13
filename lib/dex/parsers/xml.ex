@@ -352,7 +352,7 @@ defmodule Dex.Parsers.XML do
         no = no + 1
         {{id |> String.downcase, %App.Fun{no: no}}, no}
       end) |> elem(0)
-      |> Enum.into(%{App.default_fun => %App.Fun{no: 0, access: :public}})
+      |> Enum.into(%{App.default_fun => %App.Fun{no: 0, access: :protected}})
     funs = Map.merge(state.app.funs, funs)
     put_in state.app.funs, funs
   end

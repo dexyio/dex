@@ -65,7 +65,8 @@ defmodule Dex.App do
   def notify(msg), do: Event.notify __MODULE__, msg
   def notify_cluster(msg), do: Event.notify_cluster __MODULE__, msg
 
-  @bucket :erlang.term_to_binary(__MODULE__)
+  @bucket Application.get_env(:dex, __MODULE__)[:bucket]
+    || Logger.error ":bucket not configured for #{__MODULE__}"
 
   def default_userid, do: @default_userid
 

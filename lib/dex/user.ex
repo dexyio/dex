@@ -24,7 +24,10 @@ defmodule Dex.User do
     enabled: boolean
   }
 
-  @bucket :erlang.term_to_binary(__MODULE__)
+  require Logger
+
+  @bucket Application.get_env(:dex, __MODULE__)[:bucket]
+    || Logger.error ":bucket not configured for #{__MODULE__}"
 
   use Dex.Common
   use Timex

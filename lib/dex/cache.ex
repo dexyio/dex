@@ -1,5 +1,9 @@
 defmodule Dex.Cache do
 
+  defmodule Supervisor do
+    use DexyLib.Supervisor, otp_app: :dex
+  end
+
   @adapter Application.get_env(:dex, __MODULE__)[:adapter]
 
   defmodule Adapter do

@@ -4,10 +4,6 @@ defmodule Dex.Cache.Adapters.ConCache do
 
   use Dex.Common
 
-  defmodule Supervisor do
-    use DexyLib.Supervisor, otp_app: :dex
-  end
-
   defmodule State do
     defstruct buckets: []
   end
@@ -23,7 +19,7 @@ defmodule Dex.Cache.Adapters.ConCache do
   end
 
   def buckets do
-    Supervisor.members
+    Dex.Cache.Supervisor.members
   end
 
   def put(bucket, key, val), do: ConCache.put(bucket, key, val)
@@ -49,7 +45,7 @@ defmodule Dex.Cache.Adapters.ConCache do
   defp new_child bucket, opts \\ nil do
     opts = opts || conf()[bucket] || conf()[:default_opts] || []
     args = [opts, [name: bucket]]
-    Supervisor.start_child(:worker, ConCache, args, id: bucket)
+    Dex.Cache.Supervisor.start_child(:worker, ConCache, args, id: bucket)
   end
 
 end

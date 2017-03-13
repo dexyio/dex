@@ -20,7 +20,7 @@ defmodule Dex.WorkerTest do
           </data>
         </fn:1>
 
-        | app.delete "app1" 
+        | app.disable "app1" | app.delete "app1" 
         | app.put "app1", app_body() | assert "ok"
         | app.get "app1" 
         | assert data.enabled: true
@@ -54,12 +54,10 @@ defmodule Dex.WorkerTest do
           </data>
         </fn:1>
 
-        | app.delete "app2" | assert "app_not_disabled"
-        | app.disable "app2" | assert "ok"
-        | app.delete "app2" | assert "ok"
         | app.post "app2", app_body() 
+        | nil
       </data>
-    """ |> assert!("ok")
+    """ |> assert!(nil)
   end
 
   test "app2 - valid calling app1" do
