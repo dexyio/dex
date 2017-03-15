@@ -32,7 +32,6 @@ defmodule Dex.Seater do
       type: seater_name,
       no: seat_no,
       data: any,
-      #on_purge: nil | (seat_no, any -> true | false),
       opts: Keyword.t,
       touched: seconds
     }
@@ -218,7 +217,7 @@ defmodule Dex.Seater do
     now = Lib.now :secs
     acc = {[], free}
     {used, free} = Map.values(used) |> do_purge_seats(now, acc)
-    Logger.debug "#{state.name}=#{inspect used: Enum.count(used), free: length(free)}"
+    Logger.debug "#{inspect name: state.name, used: Enum.count(used), free: length(free)}"
     %{state | used: used, free: free}
   end
 

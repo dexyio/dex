@@ -69,10 +69,11 @@ defmodule Dex.Service do
     {res, rid: rid, pid: pid}
   end
 
+  @default_user "*"
+
   @spec route(Proplist.t) :: response
   @spec route(%Request{}) :: response
 
-  @default_user "*"
   def route(req) when is_list(req) do struct(Request, req) |> route end
   def route req = %Request{id: nil} do route %{req | id: Lib.unique} end
   def route req = %Request{user: ""} do route %{req | user: @default_user} end

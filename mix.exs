@@ -98,6 +98,8 @@ defmodule Dex.Mixfile do
       {:jsx, "~> 2.8", override: true},
       {:riakc, "~> 2.4", override: true},
 
+      {:logger_file_backend, "~> 0.0.9"},
+
       #{:socket, "~> 0.3"},
       #{:httpoison, "~> 0.10.0"},
       #{:matrix, "~> 0.3.0"},

@@ -37,6 +37,10 @@ defmodule Dex.Worker do
 
   def play(worker, user, req) do
     GenServer.cast(worker, {:play, user, req})
+    Logger.info inspect(
+      pid: self(), user: req.user, app: req.app, fun: req.fun,
+      args: req.args, opts: req.opts
+    )
   end
 
   # callback functions

@@ -10,12 +10,12 @@ plugin_bucket_idx_start = 100
 plugin_bucket_idx_end = 199
 
 bucket_idx = [
-  :user,
-  :app,
+  Dex.User,
+  Dex.App,
 ] |> Enum.with_index(bucket_idx_start)
 
 plugin_bucket_idx = [
-  :KV,
+  DexyPluginKV
 ] |> Enum.with_index(plugin_bucket_idx_start)
 
 
@@ -52,13 +52,13 @@ config :dex, Dex.Seater.Supervisor,
   ]
 
 config :dex, Dex.User,
-  bucket: <<bucket_idx[:user]>>,
+  bucket: <<bucket_idx[Dex.User]>>,
   event_handlers: [
     {Dex.User.EventHandler, []}
   ]
 
 config :dex, Dex.App,
-  bucket: <<bucket_idx[:app]>>,
+  bucket: <<bucket_idx[Dex.App]>>,
   event_handlers: [
     {Dex.App.EventHandler, []}
   ]
@@ -181,13 +181,25 @@ config :dexy_plugin_mail, DexyPluginMail.Adapters.Bamboo,
 # Elixir Logger
 #
 config :logger,
-  backends: [:console]
+  backends: [
+    :console,
+    {LoggerFileBackend, :info},
+    {LoggerFileBackend, :error},
+  ]
 
 config :logger, :console,
   level: :debug,
   format: "$time [$level] $metadata$message\n",
   metadata: [:module]
 
+config :logger, :info,
+  level: :info, path: "log/info.log"
+
+config :logger, :warn,
+  level: :warn, path: "log/warn.log" 
+
+config :logger, :error,
+  level: :error, path: "log/error.log" 
 
 #
 # Erlang/OTP SASL
